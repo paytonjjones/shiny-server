@@ -22,24 +22,28 @@ date_format: Jan 2006
 #   Leave `date_end` empty if it's your current employer.
 #   Begin multi-line descriptions with YAML's `|2-` multi-line prefix.
 experience:
-  - title: CEO
-    company: GenCoin
+  - title: Senior Data Scientist
+    company: Pluralsight
     company_url: ''
-    location: California
-    date_start: '2017-01-01'
+    location: Remote (Seattle, WA)
+    date_start: '2020-07-15'
     date_end: ''
     description: |2-
-        Responsibilities include:
+    
+        * Work with production level deep learning systems scaled to more than 1 million users
+        * Use network science to enhance machine learning algorithms for content recommendation
+        * Develop scalable analytic solutions, synthesize results, and present to product leadership
         
-        * Analysing
-        * Modelling
-        * Deploying
-        
-  - title: Professor
-    company: University X
+  - title: Data Scientist
+    company: Hyka Therapeutics
     company_url: ''
-    location: California
-    date_start: '2016-01-01'
-    date_end: '2016-12-31'
-    description: Taught electronic engineering and researched semiconductor physics.
+    location: Boston, MA
+    date_start: '2019-11-01'
+    date_end: '2020-07-01'
+    description: |2-
+
+        * Developed digital phenotyping & psychometric software
+        * Provided solutions for data analyses & visualizations of real-time mental health data
+        * Developed recommendation & sorting algorithms for therapeutic content deliverables
+        
 ---
