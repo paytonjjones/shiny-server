@@ -7,7 +7,7 @@
     <description>Payton Jones</description>
     <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Sun, 13 Dec 2020 00:00:00 +0000</lastBuildDate>
     <image>
-      <url>/author/payton-jones/avatar_hu52a603635ecebd45650b162dadabb4e5_12861_270x270_fill_q75_lanczos_center.jpg</url>
+      <url>/author/payton-jones/avatar_huafa025c38fe54d9594e096b94a284bfa_233978_270x270_fill_q75_lanczos_center.jpg</url>
       <title>Payton Jones</title>
       <link>/author/payton-jones/</link>
     </image>
@@ -107,17 +107,11 @@
     </item>
     
     <item>
-      <title>An example preprint / working paper</title>
-      <link>/publication/preprint/</link>
-      <pubDate>Sun, 07 Apr 2019 00:00:00 +0000</pubDate>
-      <guid>/publication/preprint/</guid>
-      <description>&lt;div class=&#34;alert alert-note&#34;&gt;
-  &lt;div&gt;
-    Create your slides in Markdown - click the &lt;em&gt;Slides&lt;/em&gt; button to check out the example.
-  &lt;/div&gt;
-&lt;/div&gt;
-&lt;p&gt;Supplementary notes can be added here, including &lt;a href=&#34;https://wowchemy.com/docs/writing-markdown-latex/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;code, math, and images&lt;/a&gt;.&lt;/p&gt;
-</description>
+      <title>Network trees: A method for recursively partitioning covariance structures</title>
+      <link>/publication/networktree/</link>
+      <pubDate>Wed, 01 Jan 2020 00:00:00 +0000</pubDate>
+      <guid>/publication/networktree/</guid>
+      <description></description>
     </item>
     
     <item>
@@ -165,41 +159,19 @@ date: 2019-09-01
     </item>
     
     <item>
-      <title>An example journal article</title>
-      <link>/publication/journal-article/</link>
-      <pubDate>Tue, 01 Sep 2015 00:00:00 +0000</pubDate>
-      <guid>/publication/journal-article/</guid>
-      <description>&lt;div class=&#34;alert alert-note&#34;&gt;
-  &lt;div&gt;
-    Click the &lt;em&gt;Cite&lt;/em&gt; button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-  &lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&#34;alert alert-note&#34;&gt;
-  &lt;div&gt;
-    Create your slides in Markdown - click the &lt;em&gt;Slides&lt;/em&gt; button to check out the example.
-  &lt;/div&gt;
-&lt;/div&gt;
-&lt;p&gt;Supplementary notes can be added here, including &lt;a href=&#34;https://wowchemy.com/docs/writing-markdown-latex/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;code, math, and images&lt;/a&gt;.&lt;/p&gt;
-</description>
+      <title>Bridge centrality: A network approach to understanding comorbidity</title>
+      <link>/publication/bridge_centrality/</link>
+      <pubDate>Tue, 01 Jan 2019 00:00:00 +0000</pubDate>
+      <guid>/publication/bridge_centrality/</guid>
+      <description></description>
     </item>
     
     <item>
-      <title>An example conference paper</title>
-      <link>/publication/conference-paper/</link>
-      <pubDate>Mon, 01 Jul 2013 00:00:00 +0000</pubDate>
-      <guid>/publication/conference-paper/</guid>
-      <description>&lt;div class=&#34;alert alert-note&#34;&gt;
-  &lt;div&gt;
-    Click the &lt;em&gt;Cite&lt;/em&gt; button above to demo the feature to enable visitors to import publication metadata into their reference management software.
-  &lt;/div&gt;
-&lt;/div&gt;
-&lt;div class=&#34;alert alert-note&#34;&gt;
-  &lt;div&gt;
-    Create your slides in Markdown - click the &lt;em&gt;Slides&lt;/em&gt; button to check out the example.
-  &lt;/div&gt;
-&lt;/div&gt;
-&lt;p&gt;Supplementary notes can be added here, including &lt;a href=&#34;https://wowchemy.com/docs/writing-markdown-latex/&#34; target=&#34;_blank&#34; rel=&#34;noopener&#34;&gt;code, math, and images&lt;/a&gt;.&lt;/p&gt;
-</description>
+      <title>Visualizing psychological networks: A tutorial in R</title>
+      <link>/publication/viz_tutorial/</link>
+      <pubDate>Sat, 01 Sep 2018 00:00:00 +0000</pubDate>
+      <guid>/publication/viz_tutorial/</guid>
+      <description></description>
     </item>
     
   </channel>

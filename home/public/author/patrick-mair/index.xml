@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Patrick Mair | Payton Jones</title>
+    <link>/author/patrick-mair/</link>
+      <atom:link href="/author/patrick-mair/index.xml" rel="self" type="application/rss+xml" />
+    <description>Patrick Mair</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Wed, 01 Jan 2020 00:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/images/logo_hu55399b882dcd9d8fbe3ae8d74dceeb2f_9002_300x300_fit_lanczos_2.png</url>
+      <title>Patrick Mair</title>
+      <link>/author/patrick-mair/</link>
+    </image>
+    
+    <item>
+      <title>Network trees: A method for recursively partitioning covariance structures</title>
+      <link>/publication/networktree/</link>
+      <pubDate>Wed, 01 Jan 2020 00:00:00 +0000</pubDate>
+      <guid>/publication/networktree/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Visualizing psychological networks: A tutorial in R</title>
+      <link>/publication/viz_tutorial/</link>
+      <pubDate>Sat, 01 Sep 2018 00:00:00 +0000</pubDate>
+      <guid>/publication/viz_tutorial/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

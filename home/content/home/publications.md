@@ -9,14 +9,14 @@ headless: true
 # Order that this section appears on the page.
 weight: 90
 
-title: Publications
+title: Selected Publications
 subtitle: ''
 
 content:
   # Page type to display. E.g. post, talk, publication...
   page_type: publication
   # Choose how much pages you would like to display (0 = all pages)
-  count: 5
+  count: 0
   # Choose how many pages you would like to offset by
   offset: 0
   # Page order: descending (desc) or ascending (asc) date.
@@ -37,6 +37,4 @@ design:
   view: 4
 ---
 
-{{% callout note %}}
-[Search Publications](./publication/)
-{{% /callout %}}
+[List of all publications (Google Scholar)](https://scholar.google.com/citations?user=KRBoSPoAAAAJ&hl=en)

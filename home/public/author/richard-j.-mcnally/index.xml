@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Richard J. McNally | Payton Jones</title>
+    <link>/author/richard-j.-mcnally/</link>
+      <atom:link href="/author/richard-j.-mcnally/index.xml" rel="self" type="application/rss+xml" />
+    <description>Richard J. McNally</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Tue, 01 Jan 2019 00:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/images/logo_hu55399b882dcd9d8fbe3ae8d74dceeb2f_9002_300x300_fit_lanczos_2.png</url>
+      <title>Richard J. McNally</title>
+      <link>/author/richard-j.-mcnally/</link>
+    </image>
+    
+    <item>
+      <title>Bridge centrality: A network approach to understanding comorbidity</title>
+      <link>/publication/bridge_centrality/</link>
+      <pubDate>Tue, 01 Jan 2019 00:00:00 +0000</pubDate>
+      <guid>/publication/bridge_centrality/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Visualizing psychological networks: A tutorial in R</title>
+      <link>/publication/viz_tutorial/</link>
+      <pubDate>Sat, 01 Sep 2018 00:00:00 +0000</pubDate>
+      <guid>/publication/viz_tutorial/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>
