@@ -41,3 +41,7 @@ vignettes/*.pdf
 # Other 
 *.txt
 *.DS_Store
+
+# advanced_rent_buy_calculator
+
+advanced_rent_buy_calculator/*.Rdata
