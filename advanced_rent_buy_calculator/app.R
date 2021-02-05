@@ -1,8 +1,5 @@
-# TODO: add "opportunity cost" parameter in home buying output table
-# TODO: make line graph of total costs over time (real + opportunity) like NerdWallet
-# TODO: in line graph, detect "point at which buying gains advantage"
 require(pacman)
-p_load(shiny, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, viridis)
+p_load(shiny, FinancialMath, ggplot2, reshape2, gridExtra, dplyr)
 
 ui <- fluidPage(
 
@@ -15,12 +12,12 @@ ui <- fluidPage(
             # Rent
             h3("Rent"),
             numericInput("monthly_rent", label = "Monthly Rent", 
-                         value = 1300, min = 0),
+                         value = 2300, min = 0),
             
             # Buy
             h3("Buy"),
             numericInput("initial_home_price", label = "Home Price", 
-                         value = 250000, min = 0),
+                         value = 420000, min = 0),
             sliderInput("interest_rate", label = "Interest Rate",
                         min = 0, max = 10, value = 3, step = 0.1),
             sliderInput("downpayment_percent", label = "Downpayment (%)",
@@ -31,7 +28,7 @@ ui <- fluidPage(
             # Forecast
             h3("Forecast"),
             sliderInput("forecast_length", label = "Number of Years to Forecast",
-                        min = 1, max = 80, value = 20, step = 1),
+                        min = 1, max = 80, value = 35, step = 1),
             checkboxInput("use_historical_data", label = "Use Historical Stock Performance", value = TRUE),
             uiOutput("historical_data_extras_ui"),
             uiOutput("annualized_return_ui"),
@@ -41,7 +38,7 @@ ui <- fluidPage(
             numericInput("starting_liquid_net_worth", label = "Liquid Net Worth (Start)", 
                          value = 50000, min = 0),
             numericInput("annual_income", label = "Annual Income (Start)", 
-                         value = 55000, min = 0),
+                         value = 75000, min = 0),
             numericInput("annual_other_expenses", label = "Annual Non-Housing Expenses (Start)", 
                          value = 20000, min = 0),
             
@@ -84,9 +81,11 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-            h3("Net Worth over Time"),
+            h3("Net Worth"),
             plotOutput("worthPlot"),
-            h3("Expenses over Time"),
+            h3("Total Costs"),
+            plotOutput("comparisonPlot"),
+            h3("Monthly Housing Expenses"),
             plotOutput("expensePlot")
            
         )
@@ -289,22 +288,42 @@ server <- function(input, output) {
     
     output$comparisonPlot <- renderPlot({
         results_table <- mydata()
-        # results_table$opportunity_cost_marginal <- results_table$opportunity_cost[1]
-        # for(i in 2:nrow(results_table)){
-        #     results_table[i,"opportunity_cost_marginal"] <- 
-        #         results_table[i,"opportunity_cost"] - results_table[i-1,"opportunity_cost"]
-        # }
         comparison_plot_data <- results_table %>%
-            mutate(buy_cost = opportunity_cost_marginal + monthly_piti + hoa + repair) %>%
-            mutate(buy_cost_cumulative = cumsum(buy_cost),
-                   rent_cost_cumulative = cumsum(monthly_rent)) %>%
-            pivot_longer(cols = c(buy_cost_cumulative, rent_cost_cumulative),
-                         names_to = "total_expense")
+            mutate(buy_cost = net_worth_homeless - liquid_net_worth_buy - equity,
+                   rent_cost = net_worth_homeless - liquid_net_worth_rent) %>%
+            pivot_longer(cols = c(buy_cost, rent_cost),
+                         names_to = "choice") %>%
+            mutate(choice = factor(choice, levels = c("buy_cost", "rent_cost"), labels = c("Buy", "Rent")))
         
-        comparison_plot_data %>% select(c(total_expense, value))
+        comparison_plot_data %>% select(c(choice, value))
         
-        ggplot(comparison_plot_data, aes(x=year, y=value, col=total_expense)) +
-            geom_line()
+        compare_boolean <- (comparison_plot_data %>% 
+            filter(choice == "Buy") %>% 
+            select(value)) > 
+                (comparison_plot_data %>% 
+                    filter(choice == "Rent") %>% 
+                    select(value))
+        
+        if(sum(compare_boolean) == 0){
+            comp_title <- "Buying is always better than renting"
+        } else if (sum(!compare_boolean) == 0){
+            comp_title <- "Renting is always better than buying"
+        } else if (compare_boolean[1]){
+            intersection <- min(which(!compare_boolean))
+            comp_title <- paste("Buying becomes advantageous after", intersection, "years")
+        } else {
+            intersection <- min(which(compare_boolean))
+            comp_title <- paste("Renting becomes advantageous after", intersection, "years")
+        }
+        
+        ggplot(comparison_plot_data, aes(x=year, y=value/1000000, col=choice)) +
+            geom_line() + 
+            ggtitle(comp_title) +
+            geom_vline(xintercept=intersection, linetype="dashed", color="grey") +
+            theme(legend.title = element_blank()) +
+            ylab("Expenses + Opportunity Cost (Millions)") +
+            xlab("Year") + 
+            theme(legend.position="bottom")
     })
     
     output$worthPlot <- renderPlot({
@@ -326,9 +345,9 @@ server <- function(input, output) {
             geom_area() +
             facet_wrap(~choice) + 
             ylab("Net Worth (Millions)") +
-            labs(fill="Asset Type")
-        
-
+            xlab("Year") +
+            labs(fill="Asset Type") + 
+            theme(legend.position="bottom")
     })
     
     output$expensePlot <- renderPlot({
@@ -339,20 +358,18 @@ server <- function(input, output) {
                                   "property_tax",
                                   "homeowners_insurance",
                                   "hoa",
-                                  "repair",
-                                  "monthly_other_expenses")
-        monthly_expense_labels <- c("Mortgage",
-                                    "Rent",
+                                  "repair")
+        monthly_expense_labels <- c("Mortgage / Rent",
+                                    "Mortgage / Rent",
                                     "PMI",
                                     "Property Taxes",
                                     "Homeowners Insurance",
                                     "HOA Fees",
-                                    "Home Repairs",
-                                    "All Other Expenses")
+                                    "Home Repairs")
         expense_plot_data <- results_table %>%
             pivot_longer(cols = any_of(all_monthly_expenses),
                          names_to = "expense_type") %>%
-            mutate(choice = ifelse(expense_type %in% c("monthly_rent", "monthly_other_expenses"),
+            mutate(choice = ifelse(expense_type %in% c("monthly_rent"),
                                    "Rent",
                                    "Buy")) %>%
             mutate(expense_type = factor(expense_type,
@@ -369,8 +386,10 @@ server <- function(input, output) {
             geom_area() +
             facet_wrap(~choice) +
             ylab("Monthly Expenses") +
-            scale_fill_brewer(palette = 'Spectral')+
-            theme(legend.title = element_blank())
+            xlab("Year") +
+            scale_fill_brewer(palette = 'Spectral') +
+            theme(legend.title = element_blank()) + 
+            theme(legend.position="bottom")
     })
     
     
