@@ -1,9 +1,8 @@
-# TODO: rent and buy to a single tibble
 # TODO: add "opportunity cost" parameter in home buying output table
 # TODO: make line graph of total costs over time (real + opportunity) like NerdWallet
 # TODO: in line graph, detect "point at which buying gains advantage"
 require(pacman)
-p_load(shiny, FinancialMath, ggplot2, reshape2, gridExtra, dplyr)
+p_load(shiny, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, viridis)
 
 ui <- fluidPage(
 
@@ -171,53 +170,32 @@ server <- function(input, output) {
         effective_tax_rate <- input$effective_tax_rate
         cap_gains <- input$cap_gains
         
-        # ---- Rent ----
+        results_table <- tibble(year = numeric(),
+                                liquid_net_worth_rent = numeric(),
+                                monthly_rent = numeric(),
+                                monthly_other_expenses = numeric(),
+                                liquid_net_worth_buy = numeric(), 
+                                equity = numeric(), 
+                                monthly_piti = numeric(), 
+                                mortgage = numeric(), 
+                                pmi = numeric(), 
+                                property_tax = numeric(), 
+                                homeowners_insurance = numeric(), 
+                                hoa = numeric(), 
+                                repair = numeric(),
+                                net_worth_homeless = numeric())
         
-        rent_results <- tibble(year = numeric(),
-                               liquid_net_worth_rent = numeric(), 
-                               monthly_rent = numeric(),
-                               monthly_other_expenses = numeric())
-        # rent_results <- matrix(NA, nrow=forecast_length, ncol=4)
-        # colnames(rent_results) <- c("liquid_net_worth", "equity", "monthly_rent", "monthly_other_expenses")
+        net_worth_homeless <- starting_liquid_net_worth 
         
-        liquid_net_worth <- starting_liquid_net_worth 
+        # ---- Rent Setup ----
+        
+        liquid_net_worth_rent <- starting_liquid_net_worth 
         current_income <- annual_income
         current_expenses <- annual_other_expenses
         current_rent <- monthly_rent
         equity <- 0
         
-        for(year in 1:forecast_length){
-            liquid_net_worth <- liquid_net_worth * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
-            liquid_net_worth <- liquid_net_worth / (1 + inflation*.01)
-            current_income <- current_income * (1+annual_income_increase*.01)
-            current_expenses <- current_expenses * (1 + lifestyle_inflation/100)
-            current_rent <- current_rent * (1 + rent_appreciation/100)
-            extra_invested <- current_income*(1 - effective_tax_rate*.01) - current_expenses - current_rent*12
-            liquid_net_worth <- liquid_net_worth + extra_invested
-            if(length(liquid_net_worth)>0){
-                rent_results <- rent_results %>% 
-                    add_row(year = year, 
-                            liquid_net_worth_rent = liquid_net_worth,
-                            monthly_rent = current_rent,
-                            monthly_other_expenses = current_expenses/12)
-            }
-        }
-        
-        # ---- Buy ----
-        
-        buy_results <- tibble(year = numeric(),
-                              liquid_net_worth_home = numeric(), 
-                              equity = numeric(), 
-                              monthly_piti = numeric(), 
-                              mortgage = numeric(), 
-                              pmi = numeric(), 
-                              property_tax = numeric(), 
-                              homeowners_insurance = numeric(), 
-                              hoa = numeric(), 
-                              repair = numeric())
-        # buy_results <- matrix(NA, nrow=forecast_length, ncol=4)
-        # colnames(buy_results) <- c("liquid_net_worth", "equity", "monthly_payment", "monthly_other_expenses",
-        #                            "mortgage", "pmi", "property_tax", "homeowners_insurance", "hoa", "repair")
+        # ---- Buy Setup ----
         
         downpayment_amount <- initial_home_price * (downpayment_percent/100)
         closing_amount <- initial_home_price * (closing/100)
@@ -228,17 +206,39 @@ server <- function(input, output) {
                              n = payment_periods,
                              i = monthly_interest_percent)
         
-        liquid_net_worth <- starting_liquid_net_worth - downpayment_amount - closing_amount
+        liquid_net_worth_buy <- starting_liquid_net_worth - downpayment_amount - closing_amount
         current_income <- annual_income
         current_expenses <- annual_other_expenses
         equity <- downpayment_amount
         current_home_value <- initial_home_price
+        current_opportunity_cost <- 0
+        
+        # ---- Year by Year Calculator ----
         
         for(year in 1:forecast_length){
-            liquid_net_worth <- liquid_net_worth * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
-            liquid_net_worth <- liquid_net_worth / (1 + inflation*.01)
+            
             current_income <- current_income * (1+annual_income_increase*.01)
             current_expenses <- current_expenses * (1 + lifestyle_inflation/100)
+            
+            # Homeless Calculations
+            
+            net_worth_homeless <- net_worth_homeless * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
+            net_worth_homeless <- net_worth_homeless / (1 + inflation*.01)
+            extra_invested_homeless <- current_income*(1 - effective_tax_rate*.01) - current_expenses
+            net_worth_homeless <- net_worth_homeless + extra_invested_homeless
+            
+            # Rent Calculations
+            
+            liquid_net_worth_rent <- liquid_net_worth_rent * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
+            liquid_net_worth_rent <- liquid_net_worth_rent / (1 + inflation*.01)
+            current_rent <- current_rent * (1 + rent_appreciation/100)
+            extra_invested_rent <- current_income*(1 - effective_tax_rate*.01) - current_expenses - current_rent*12
+            liquid_net_worth_rent <- liquid_net_worth_rent + extra_invested_rent
+            
+            # Buy Calculations
+            
+            liquid_net_worth_buy <- liquid_net_worth_buy * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
+            liquid_net_worth_buy <- liquid_net_worth_buy / (1 + inflation*.01)
             current_home_value <-  current_home_value * (1 + home_appreciation/100)
             current_mortgage <- ifelse(year <= term, amort$Schedule[year*12,"Payment"], 0)
             balance_remaining <- ifelse(year <= term, amort$Schedule[year*12,"Balance"], 0)
@@ -258,12 +258,16 @@ server <- function(input, output) {
             } else {
                 repairs * (1+inflation*.01)^year
             }
-            extra_invested <- current_income*(1 - effective_tax_rate*.01) - current_expenses - current_piti*12 - repair_cost
-            liquid_net_worth <- liquid_net_worth + extra_invested 
-            if(length(liquid_net_worth)>0){
-                buy_results <- buy_results %>% 
+            extra_invested_buy <- current_income*(1 - effective_tax_rate*.01) - current_expenses - current_piti*12 - repair_cost
+            liquid_net_worth_buy <- liquid_net_worth_buy + extra_invested_buy
+            
+            if(length(liquid_net_worth_buy)>0){
+                results_table <- results_table %>% 
                     add_row(year = year, 
-                            liquid_net_worth_home = liquid_net_worth,
+                            liquid_net_worth_rent = liquid_net_worth_rent,
+                            monthly_rent = current_rent,
+                            monthly_other_expenses = current_expenses/12,
+                            liquid_net_worth_buy = liquid_net_worth_buy,
                             equity = current_equity,
                             monthly_piti = current_piti,
                             mortgage = current_mortgage,
@@ -271,22 +275,42 @@ server <- function(input, output) {
                             property_tax = current_property_tax,
                             homeowners_insurance = current_homeowners_insurance,
                             hoa = monthly_hoa_fees,
-                            repair = repair_cost/12)
-                
+                            repair = repair_cost/12,
+                            net_worth_homeless = net_worth_homeless)
             }
         }
         
         # combine into a single tibble
-        results_table <- inner_join(rent_results, buy_results, by="year")
+        #results_table <- inner_join(rent_results, buy_results, by="year")
         save(results_table, file="results_table.Rdata") # for debugging
         
         return(results_table)
     })
     
+    output$comparisonPlot <- renderPlot({
+        results_table <- mydata()
+        # results_table$opportunity_cost_marginal <- results_table$opportunity_cost[1]
+        # for(i in 2:nrow(results_table)){
+        #     results_table[i,"opportunity_cost_marginal"] <- 
+        #         results_table[i,"opportunity_cost"] - results_table[i-1,"opportunity_cost"]
+        # }
+        comparison_plot_data <- results_table %>%
+            mutate(buy_cost = opportunity_cost_marginal + monthly_piti + hoa + repair) %>%
+            mutate(buy_cost_cumulative = cumsum(buy_cost),
+                   rent_cost_cumulative = cumsum(monthly_rent)) %>%
+            pivot_longer(cols = c(buy_cost_cumulative, rent_cost_cumulative),
+                         names_to = "total_expense")
+        
+        comparison_plot_data %>% select(c(total_expense, value))
+        
+        ggplot(comparison_plot_data, aes(x=year, y=value, col=total_expense)) +
+            geom_line()
+    })
+    
     output$worthPlot <- renderPlot({
         results_table <- mydata()
         worth_plot_data <- results_table %>% 
-            pivot_longer(cols = c(liquid_net_worth_home, 
+            pivot_longer(cols = c(liquid_net_worth_buy, 
                                   liquid_net_worth_rent, 
                                   equity),
                          names_to = "asset_type") %>%
@@ -294,17 +318,13 @@ server <- function(input, output) {
                                    "Rent",
                                    "Buy")) %>%
             mutate(asset_type = factor(asset_type,
-                                       levels = c("liquid_net_worth_home", "liquid_net_worth_rent", "equity"),
+                                       levels = c("liquid_net_worth_buy", "liquid_net_worth_rent", "equity"),
                                        labels = c("Liquid Net Worth","Liquid Net Worth", "Equity")))
         
-        max_val <- results_table %>%
-            select(starts_with("liquid_net_worth")) %>% 
-            max * 1.05 # * b/c ggplot cuts off values >= max
         
         ggplot(worth_plot_data, aes(x=year, y=value/1000000, fill=asset_type)) +
             geom_area() +
-            facet_wrap(~choice) + #r
-            ylim(c(0,max_val/1000000)) +
+            facet_wrap(~choice) + 
             ylab("Net Worth (Millions)") +
             labs(fill="Asset Type")
         
@@ -312,55 +332,45 @@ server <- function(input, output) {
     })
     
     output$expensePlot <- renderPlot({
-        # return_vals <- mydata()
-        # rent_results <- return_vals[[1]]
-        # buy_results <- return_vals[[2]]
-        # 
-        # all_monthly_expenses <- c("monthly_rent",
-        #                           "monthly_other_expenses",
-        #                           "mortgage",
-        #                           "pmi",
-        #                           "property_tax",
-        #                           "homeowners_insurance",
-        #                           "hoa",
-        #                           "repair")
-        # monthly_expense_labels <- c("Rent",
-        #                             "All Other Expenses",
-        #                             "Mortgage",
-        #                             "Private Mortgage Insurance (PMI)",
-        #                             "Property Taxes",
-        #                             "Homeowners Insurance",
-        #                             "Homeowners Association (HOA) Fees",
-        #                             "Home Repairs")
-        # buy_expense_gg <- buy_results %>% 
-        #     pivot_longer(cols = any_of(all_monthly_expenses),
-        #                  names_to = "expense_type") %>%
-        #     mutate(expense_type = factor(expense_type,
-        #                                  levels = all_monthly_expenses,
-        #                                  labels = monthly_expense_labels))
-        # colnames(rent_expense_gg) <- c("year", "expense_type", "value")
-        # rent_expense_gg$expense_type <- factor(rent_expense_gg$expense_type, levels=c("monthly_other_expenses", "monthly_rent"))
-        # 
-        # 
-        # max_val_expense <- max(sum(rent_expense_gg[rent_expense_gg$year == max(rent_expense_gg$year), "value"], 1),
-        #                        sum(buy_expense_gg[buy_expense_gg$year == max(buy_expense_gg$year), "value"], 1)) 
-        # 
-        # rent_expense <- ggplot(rent_expense_gg, aes(x=year, y=value, fill=expense_type)) +
-        #     geom_area() +
-        #     ylim(c(0,max_val_expense)) +
-        #     ggtitle("Rent") +
-        #     ylab("Monthly Expenses") + 
-        #     scale_fill_hue(l=40, c=35) 
-        # 
-        # buy_expense <- ggplot(buy_expense_gg, aes(x=year, y=value, fill=expense_type)) +
-        #     geom_area() +
-        #     ylim(c(0,max_val_expense)) +
-        #     ggtitle("Buy") +
-        #     ylab("Monthly Expenses") + 
-        #     scale_fill_hue(l=40, c=35) +
-        #     theme(legend.title = element_blank())
-        # 
-        # grid.arrange(rent_expense, buy_expense, nrow=1)
+        results_table <- mydata()
+        all_monthly_expenses <- c("mortgage",
+                                  "monthly_rent",
+                                  "pmi",
+                                  "property_tax",
+                                  "homeowners_insurance",
+                                  "hoa",
+                                  "repair",
+                                  "monthly_other_expenses")
+        monthly_expense_labels <- c("Mortgage",
+                                    "Rent",
+                                    "PMI",
+                                    "Property Taxes",
+                                    "Homeowners Insurance",
+                                    "HOA Fees",
+                                    "Home Repairs",
+                                    "All Other Expenses")
+        expense_plot_data <- results_table %>%
+            pivot_longer(cols = any_of(all_monthly_expenses),
+                         names_to = "expense_type") %>%
+            mutate(choice = ifelse(expense_type %in% c("monthly_rent", "monthly_other_expenses"),
+                                   "Rent",
+                                   "Buy")) %>%
+            mutate(expense_type = factor(expense_type,
+                                         levels = all_monthly_expenses,
+                                         labels = monthly_expense_labels)) 
+        
+        # Duplicate rows for "All Other Expenses"
+        expense_plot_data <- rbind(expense_plot_data,
+                                   expense_plot_data %>% 
+                                       filter(expense_type == "All Other Expenses") %>% 
+                                       mutate(choice = "Buy"))
+        
+        ggplot(expense_plot_data, aes(x=year, y=value, fill=expense_type)) +
+            geom_area() +
+            facet_wrap(~choice) +
+            ylab("Monthly Expenses") +
+            scale_fill_brewer(palette = 'Spectral')+
+            theme(legend.title = element_blank())
     })
     
     
