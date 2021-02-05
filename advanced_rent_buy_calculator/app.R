@@ -1,5 +1,5 @@
 require(pacman)
-p_load(shiny, FinancialMath, ggplot2, reshape2, gridExtra, dplyr)
+p_load(shiny, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, tidyr)
 
 ui <- fluidPage(
 
