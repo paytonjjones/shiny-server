@@ -36,9 +36,9 @@ ui <- fluidPage(
             # Income
             h3("Income"),
             numericInput("starting_liquid_net_worth", label = "Liquid Net Worth (Start)", 
-                         value = 50000, min = 0),
+                         value = 150000, min = 0),
             numericInput("annual_income", label = "Annual Income (Start)", 
-                         value = 75000, min = 0),
+                         value = 125000, min = 0),
             numericInput("annual_other_expenses", label = "Annual Non-Housing Expenses (Start)", 
                          value = 20000, min = 0),
             
@@ -81,10 +81,11 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
         mainPanel(
-            h3("Net Worth"),
-            plotOutput("worthPlot"),
             h3("Total Costs"),
             plotOutput("comparisonPlot"),
+            h3("Net Worth"),
+            textOutput("net_worth_warnings"),
+            plotOutput("worthPlot"),
             h3("Monthly Housing Expenses"),
             plotOutput("expensePlot")
            
@@ -280,10 +281,25 @@ server <- function(input, output) {
         }
         
         # combine into a single tibble
-        #results_table <- inner_join(rent_results, buy_results, by="year")
         save(results_table, file="results_table.Rdata") # for debugging
+        # load("advanced_rent_buy_calculator/results_table.Rdata") # to load
         
         return(results_table)
+    })
+    
+    output$net_worth_warnings <- renderText({
+        results_table <- mydata()
+        warning <- ""
+        if(TRUE %in% (0 > results_table$liquid_net_worth_buy) |
+           TRUE %in% (0 > results_table$liquid_net_worth_rent)) {
+            bankruptcy_year <- min(which(0 > results_table$liquid_net_worth_buy),
+                                   which(0 > results_table$liquid_net_worth_rent))
+            warning <- paste(c(warning, 
+                               "Warning: You ran out of money in year #",
+                               bankruptcy_year,
+                               ". Increase Liquid Net Worth or Yearly Income"),
+                             collapse= "")
+        }
     })
     
     output$comparisonPlot <- renderPlot({
@@ -304,21 +320,47 @@ server <- function(input, output) {
                     filter(choice == "Rent") %>% 
                     select(value))
         
-        if(sum(compare_boolean) == 0){
-            comp_title <- "Buying is always better than renting"
-        } else if (sum(!compare_boolean) == 0){
-            comp_title <- "Renting is always better than buying"
-        } else if (compare_boolean[1]){
-            intersection <- min(which(!compare_boolean))
-            comp_title <- paste("Buying becomes advantageous after", intersection, "years")
+        # At start_point: TRUE means buying is more expensive, FALSE means renting is more expensive 
+        #                 (almost always TRUE for first year)
+        switch_points <- comparison_switch_points(compare_boolean)
+        print(compare_boolean)
+        print(switch_points)
+        
+        if(is.null(switch_points$change_indices)){
+            comp_title <- ifelse(switch_points$start_point,
+                                "Renting is always better than buying", 
+                                "Buying is always better than renting")
         } else {
-            intersection <- min(which(compare_boolean))
-            comp_title <- paste("Renting becomes advantageous after", intersection, "years")
+            comp_title <- ifelse(switch_points$start_point,
+                            "Buying becomes advantageous after ", 
+                            "Renting becomes advantageous after ")
+            comp_title <- paste(c(comp_title, switch_points$change_indices[1], " years"), 
+                                collapse="")
+            if(length(switch_points$change_indices)>1){
+                for(i in 2:length(switch_points$change_indices)){
+                    but_then <- ifelse(i > 2,
+                                       ", and then ",
+                                       ", but then ")
+                    comp_title <- paste(c(comp_title, 
+                                          but_then,
+                                          c("renting", "buying")[switch_points$start_point + (i %% 2)],
+                                          " becomes advantageous after ",
+                                          switch_points$change_indices[i],
+                                          " years"), 
+                                        collapse="")
+                }
+            }
+        }
+        
+        intersection <- switch_points$change_indices[1]
+        
+        title_wrapper <- function(x, width) {
+            paste(strwrap(x, width=width), collapse = "\n")
         }
         
         ggplot(comparison_plot_data, aes(x=year, y=value/1000000, col=choice)) +
             geom_line() + 
-            ggtitle(comp_title) +
+            ggtitle(title_wrapper(comp_title, width = 80)) +
             geom_vline(xintercept=intersection, linetype="dashed", color="grey") +
             theme(legend.title = element_blank()) +
             ylab("Expenses + Opportunity Cost (Millions)") +
@@ -391,8 +433,22 @@ server <- function(input, output) {
             theme(legend.title = element_blank()) + 
             theme(legend.position="bottom")
     })
-    
-    
+}
+
+
+# Helper functions:
+comparison_switch_points <- function(boolean_vector){
+    ref_bool <- start_bool <- boolean_vector[1]
+    change_indices <- c()
+    for(i in 1:length(boolean_vector)){
+        bool <- boolean_vector[i]
+        if(bool != ref_bool){
+            ref_bool <- bool
+            change_indices <- c(change_indices, i)
+        }
+    }
+    return(list("start_point" = start_bool,
+                "change_indices" = change_indices))
 }
 
 shinyApp(ui = ui, server = server)
