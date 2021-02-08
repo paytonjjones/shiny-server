@@ -1,98 +1,108 @@
 require(pacman)
-p_load(shiny, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, tidyr)
+p_load(shiny, shinydashboard, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, tidyr)
 
-ui <- fluidPage(
-
-    # Application title
-    titlePanel("Rent vs. Buy Advanced Calculator"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            # Rent
-            h3("Rent"),
-            numericInput("monthly_rent", label = "Monthly Rent", 
-                         value = 2300, min = 0),
-            
-            # Buy
-            h3("Buy"),
-            numericInput("initial_home_price", label = "Home Price", 
-                         value = 420000, min = 0),
-            sliderInput("interest_rate", label = "Interest Rate",
-                        min = 0, max = 10, value = 3, step = 0.1),
-            sliderInput("downpayment_percent", label = "Downpayment (%)",
-                        min = 0, max = 30, value = 5, step = 1),
-            selectInput("term", label = "Mortgage Term",
-                        choices = c(15,30), selected = 30),
-            
-            # Forecast
-            h3("Forecast"),
-            sliderInput("forecast_length", label = "Number of Years to Forecast",
-                        min = 1, max = 80, value = 35, step = 1),
-            checkboxInput("use_historical_data", label = "Use Historical Stock Performance", value = TRUE),
-            uiOutput("historical_data_extras_ui"),
-            uiOutput("annualized_return_ui"),
-            
-            # Income
-            h3("Income"),
-            numericInput("starting_liquid_net_worth", label = "Liquid Net Worth (Start)", 
-                         value = 150000, min = 0),
-            numericInput("annual_income", label = "Annual Income (Start)", 
-                         value = 125000, min = 0),
-            numericInput("annual_other_expenses", label = "Annual Non-Housing Expenses (Start)", 
-                         value = 20000, min = 0),
-            
-            # Advanced - Home
-            h3("Advanced - Home"),
-            sliderInput("closing", label = "Closing Costs (%)",
-                        min = 0, max = 9, value = 5, step = 0.5),
-            sliderInput("monthly_hoa_fees", label = "Monthly HOA Fees",
-                        min = 0, max = 600, value = 200, step = 20),
-            sliderInput("pmi", label = "Private Mortgage Insurance Rate (PMI, % home value)",
-                        min = 0, max = 2, value = 0.8, step = 0.1),
-            sliderInput("homeowners_insurance", label = "Homeowner's Insurance Rate (% home value)",
-                        min = 0, max = 1, value = 0.45, step = 0.05),
-            checkboxInput("repairs_as_percentage_of_home", label = "Use % of home value for repairs", value = FALSE),
-            uiOutput("repairs_ui"),
-            
-
-            # Advanced - Annual Increases
-            h3("Advanced - Annual Increases"),
-            sliderInput("inflation", label = "Inflation (%)",
-                        min = 0, max = 4, value = 1, step = 0.1),
-            sliderInput("rent_appreciation", label = "Yearly Rent Increase (%)",
-                        min = 0, max = 10, value = 2, step = 0.5),
-            sliderInput("home_appreciation", label = "Yearly Home Value Appreciation (%)",
-                        min = 0, max = 10, value = 3, step = 0.5),
-            sliderInput("annual_income_increase", label = "Yearly Raise (%)",
-                        min = 0, max = 10, value = 2, step = 0.5),
-            sliderInput("lifestyle_inflation", label = "Lifestyle Inflation (%)",
-                        min = 0, max = 10, value = 1, step = 0.5),
-            
-            # Advanced - Taxes
-            h3("Advanced - Taxes"),
-            sliderInput("property_tax_rate", label = "Yearly Property Tax (%)",
-                        min = 0.8, max = 2, value = 1.3, step = 0.1),
-            sliderInput("effective_tax_rate", label = "Effective Tax Rate (%)",
-                        min = 0, max = 50, value = 21, step = 1),
-            sliderInput("cap_gains", label = "Capital Gains Tax (%)",
-                        min = 0, max = 25, value = 15, step = 1),
-        ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-            h3("Total Costs"),
-            plotOutput("comparisonPlot"),
-            h3("Net Worth"),
-            textOutput("net_worth_warnings"),
-            plotOutput("worthPlot"),
-            h3("Monthly Housing Expenses"),
-            plotOutput("expensePlot")
-           
-        )
-    )
+header <- dashboardHeader(
+    title="Rent vs. Buy Advanced Calculator",
+    titleWidth = "95%"
 )
 
+# ---- sidebar ----
+sidebar <- dashboardSidebar(
+    tags$head( 
+        tags$style(HTML(".main-sidebar { font-size: 20px; }"))
+    ),
+    width = "450px",
+    # Sidebar with a slider input for number of bins 
+        sidebarMenu(
+            # Rent
+            menuItem(text = "Rent vs. Buy",
+                     numericInput("monthly_rent", label = "Monthly Rent", 
+                                  value = 2300, min = 0),
+                     numericInput("initial_home_price", label = "Home Price", 
+                                  value = 420000, min = 0),
+                     sliderInput("interest_rate", label = "Interest Rate",
+                                 min = 0, max = 10, value = 3, step = 0.1),
+                     sliderInput("downpayment_percent", label = "Downpayment (%)",
+                                 min = 0, max = 30, value = 5, step = 1),
+                     selectInput("term", label = "Mortgage Term",
+                                 choices = c(15,30), selected = 30),
+                     startExpanded = TRUE
+                     ),
+            
+            # Forecast
+            menuItem(text="Forecast",
+                     sliderInput("forecast_length", label = "Number of Years to Forecast",
+                                 min = 1, max = 80, value = 35, step = 1),
+                     checkboxInput("use_historical_data", label = "Use Historical Stock Performance", value = TRUE),
+                     uiOutput("historical_data_extras_ui"),
+                     uiOutput("annualized_return_ui"),
+                     startExpanded = FALSE
+                     ),
+
+            
+            # Income
+            menuItem(text = "Income",
+                     numericInput("starting_liquid_net_worth", label = "Liquid Net Worth (Start)", 
+                                  value = 150000, min = 0),
+                     numericInput("annual_income", label = "Annual Income (Start)", 
+                                  value = 125000, min = 0),
+                     numericInput("annual_other_expenses", label = "Annual Non-Housing Expenses (Start)", 
+                                  value = 20000, min = 0),
+                     startExpanded = FALSE
+                     ),
+            
+            
+            # Advanced - Home
+            menuItem(text = "Advanced",
+                     menuItem(text = "Advanced - Home",
+                                 sliderInput("closing", label = "Closing Costs (%)",
+                                             min = 0, max = 9, value = 5, step = 0.5),
+                                 sliderInput("monthly_hoa_fees", label = "Monthly HOA Fees",
+                                             min = 0, max = 600, value = 200, step = 20),
+                                 sliderInput("pmi", label = "Private Mortgage Insurance Rate (PMI, % home value)",
+                                             min = 0, max = 2, value = 0.8, step = 0.1),
+                                 sliderInput("homeowners_insurance", label = "Homeowner's Insurance Rate (% home value)",
+                                             min = 0, max = 1, value = 0.45, step = 0.05),
+                                 checkboxInput("repairs_as_percentage_of_home", label = "Use % of home value for repairs", value = FALSE),
+                                 uiOutput("repairs_ui")
+                                 ),
+                     menuItem(text = "Advanced - Annual Increases",
+                                 sliderInput("inflation", label = "Inflation (%)",
+                                             min = 0, max = 4, value = 1, step = 0.1),
+                                 sliderInput("rent_appreciation", label = "Yearly Rent Increase (%)",
+                                             min = 0, max = 10, value = 2, step = 0.5),
+                                 sliderInput("home_appreciation", label = "Yearly Home Value Appreciation (%)",
+                                             min = 0, max = 10, value = 3, step = 0.5),
+                                 sliderInput("annual_income_increase", label = "Yearly Raise (%)",
+                                             min = 0, max = 10, value = 2, step = 0.5),
+                                 sliderInput("lifestyle_inflation", label = "Lifestyle Inflation (%)",
+                                             min = 0, max = 10, value = 1, step = 0.5)
+                                 ),
+                     menuItem(text = "Advanced - Taxes",
+                                 sliderInput("property_tax_rate", label = "Yearly Property Tax (%)",
+                                             min = 0.8, max = 2, value = 1.3, step = 0.1),
+                                 sliderInput("effective_tax_rate", label = "Effective Tax Rate (%)",
+                                             min = 0, max = 50, value = 21, step = 1),
+                                 sliderInput("cap_gains", label = "Capital Gains Tax (%)",
+                                             min = 0, max = 25, value = 15, step = 1)
+                                 ),
+                     startExpanded = FALSE
+                     )
+        )
+    )
+
+# ---- body ----
+body <- dashboardBody(
+    h3("Total Costs"),
+    plotOutput("comparisonPlot", width = "100%", height = "500px"),
+    h3("Net Worth"),
+    textOutput("net_worth_warnings"),
+    plotOutput("worthPlot", width = "100%", height = "500px"),
+    h3("Monthly Housing Expenses"),
+    plotOutput("expensePlot", width = "100%", height = "500px")
+)
+
+# ---- server ----
 server <- function(input, output) {
     
     # Input Management
@@ -359,7 +369,8 @@ server <- function(input, output) {
         comp_plot <- ggplot(comparison_plot_data, aes(x=year, y=value/1000000, col=choice)) +
             geom_line() + 
             ggtitle(title_wrapper(comp_title, width = 80)) +
-            theme(legend.title = element_blank()) +
+            theme(legend.title = element_blank(),
+                  text = element_text(size = 16)) +
             ylab("Expenses + Opportunity Cost (Millions)") +
             xlab("Year") + 
             theme(legend.position="bottom")
@@ -394,7 +405,8 @@ server <- function(input, output) {
             ylab("Net Worth (Millions)") +
             xlab("Year") +
             labs(fill="Asset Type") + 
-            theme(legend.position="bottom")
+            theme(legend.position="bottom",
+                  text = element_text(size = 16))
     })
     
     output$expensePlot <- renderPlot({
@@ -435,13 +447,22 @@ server <- function(input, output) {
             ylab("Monthly Expenses") +
             xlab("Year") +
             scale_fill_brewer(palette = 'Spectral') +
-            theme(legend.title = element_blank()) + 
-            theme(legend.position="bottom")
+            theme(legend.title = element_blank(),
+                  text = element_text(size = 16),
+                  legend.position="bottom") 
     })
+    
+    
+    # Ensure these load on startup
+    outputOptions(output, "historical_data_extras_ui", suspendWhenHidden = FALSE)
+    outputOptions(output, "annualized_return_ui", suspendWhenHidden = FALSE)
+    outputOptions(output, "repairs_ui", suspendWhenHidden = FALSE)
+    
+    
 }
 
 
-# Helper functions:
+# ---- helpers ----
 comparison_switch_points <- function(boolean_vector){
     ref_bool <- start_bool <- boolean_vector[1]
     change_indices <- c()
@@ -456,4 +477,6 @@ comparison_switch_points <- function(boolean_vector){
                 "change_indices" = change_indices))
 }
 
-shinyApp(ui = ui, server = server)
+# ---- call ----
+shinyApp(ui = dashboardPage(header, sidebar, body), 
+         server = server)
