@@ -92,6 +92,13 @@ sidebar <- dashboardSidebar(
     )
 
 # ---- body ----
+
+
+
+
+
+
+
 body <- dashboardBody(
     h3("Total Costs"),
     plotOutput("comparisonPlot", width = "100%", height = "500px"),
@@ -99,7 +106,19 @@ body <- dashboardBody(
     textOutput("net_worth_warnings"),
     plotOutput("worthPlot", width = "100%", height = "500px"),
     h3("Monthly Housing Expenses"),
-    plotOutput("expensePlot", width = "100%", height = "500px")
+    plotOutput("expensePlot", width = "100%", height = "500px"),
+    tags$div(
+        tags$br(),
+        tags$p("Did I save you time or money? Please donate $10 to keep this tool free."),
+        HTML("<form action=\"https://www.paypal.com/donate\" method=\"post\" target=\"_top\">
+                 <input type=\"hidden\" name=\"business\" value=\"WG8BX27Z3QB92\" />
+                 <input type=\"hidden\" name=\"item_name\" value=\"Creating freely available open source tools\" />
+                 <input type=\"hidden\" name=\"currency_code\" value=\"USD\" />
+                 <input type=\"image\" src=\"https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif\" 
+                 border=\"0\" name=\"submit\" title=\"PayPal - The safer, easier way to pay online!\" alt=\"Donate with PayPal button\" />
+                 <img alt=\"\" border=\"0\" src=\"https://www.paypal.com/en_US/i/scr/pixel.gif\" width=\"1\" height=\"1\" />
+                 </form>")
+    )
 )
 
 # ---- server ----
