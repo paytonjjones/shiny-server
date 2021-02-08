@@ -323,8 +323,6 @@ server <- function(input, output) {
         # At start_point: TRUE means buying is more expensive, FALSE means renting is more expensive 
         #                 (almost always TRUE for first year)
         switch_points <- comparison_switch_points(compare_boolean)
-        print(compare_boolean)
-        print(switch_points)
         
         if(is.null(switch_points$change_indices)){
             comp_title <- ifelse(switch_points$start_point,
@@ -358,14 +356,21 @@ server <- function(input, output) {
             paste(strwrap(x, width=width), collapse = "\n")
         }
         
-        ggplot(comparison_plot_data, aes(x=year, y=value/1000000, col=choice)) +
+        comp_plot <- ggplot(comparison_plot_data, aes(x=year, y=value/1000000, col=choice)) +
             geom_line() + 
             ggtitle(title_wrapper(comp_title, width = 80)) +
-            geom_vline(xintercept=intersection, linetype="dashed", color="grey") +
             theme(legend.title = element_blank()) +
             ylab("Expenses + Opportunity Cost (Millions)") +
             xlab("Year") + 
             theme(legend.position="bottom")
+        
+        # Add lines demarcating when renting/buying becomes advantageous
+        for(i in switch_points$change_indices){
+            comp_plot <- comp_plot +
+                geom_vline(xintercept=switch_points$change_indices, linetype="dashed", color="grey")
+        }
+        
+        comp_plot
     })
     
     output$worthPlot <- renderPlot({
