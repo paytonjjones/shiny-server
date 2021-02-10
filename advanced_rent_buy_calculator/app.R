@@ -1,5 +1,5 @@
 require(pacman)
-p_load(shiny, shinydashboard, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, tidyr)
+p_load(shiny, shinydashboard, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, tidyr, RColorBrewer)
 
 header <- dashboardHeader(
     title="Rent vs. Buy Advanced Calculator",
@@ -76,7 +76,7 @@ sidebar <- dashboardSidebar(
                                  ),
                      menuItem(text = "Advanced - Annual Increases",
                                  sliderInput("inflation", label = "Inflation (%)",
-                                             min = 0, max = 4, value = 1, step = 0.1),
+                                             min = 0, max = 4, value = 1.8, step = 0.1),
                                  sliderInput("rent_appreciation", label = "Yearly Rent Increase (%)",
                                              min = 0, max = 10, value = 2, step = 0.5),
                                  sliderInput("home_appreciation", label = "Yearly Home Value Appreciation (%)",
@@ -94,6 +94,11 @@ sidebar <- dashboardSidebar(
                                  sliderInput("cap_gains", label = "Capital Gains Tax (%)",
                                              min = 0, max = 25, value = 15, step = 1)
                                  ),
+                     menuItem(text = "Advanced - FIRE",
+                              checkboxInput("show_fire_plot", label = "Show Time to FIRE Plot", value = FALSE),
+                              sliderInput("withdrawal_rate", label = "FIRE Withdrawal Rate",
+                                          min = 0.5, max = 6, value = 3.2, step = 0.1)
+                     ),
                      startExpanded = FALSE
                      )
         )
@@ -109,6 +114,9 @@ body <- dashboardBody(
     plotOutput("worthPlot", width = "100%", height = "500px"),
     h3("Monthly Housing Expenses"),
     plotOutput("expensePlot", width = "100%", height = "500px"),
+    conditionalPanel("input.show_fire_plot", 
+                     h3("Time to FIRE"),
+                     plotOutput("firePlot", width = "100%", height = "500px")),
     tags$div(
         tags$br(),
         tags$p("Did I save you time or money? Please donate $10 to keep this tool free."),
@@ -126,7 +134,7 @@ body <- dashboardBody(
 # ---- server ----
 server <- function(input, output) {
     
-    # Input Management
+    # ---- input management ----
     output$repairs_ui <- renderUI(
         if(input$repairs_as_percentage_of_home) {
             sliderInput("repairs", label = "Yearly Repairs (% home value)", min = 0, max = 2, value = 0.35, step = 0.05)
@@ -136,7 +144,7 @@ server <- function(input, output) {
         })
     output$annualized_return_ui <- renderUI(
         if(!input$use_historical_data) {
-            sliderInput("annualized_return", label = "Expected Investment Return (Annual)", min = 0, max = 20, value = 7, step = 0.25)
+            sliderInput("annualized_return", label = "Expected Investment Return (Annual)", min = 0, max = 20, value = 10, step = 0.25)
         })
     
     output$historical_data_extras_ui <- renderUI(
@@ -150,8 +158,10 @@ server <- function(input, output) {
     
     
 
-    # Calculator
+    # ---- calculator ----
     mydata <- reactive({
+        
+        # ---- calculator initialization ----
         req(!is.null(input$repairs))
         req(input$use_historical_data | !is.null(input$annualized_return))
         monthly_rent <- input$monthly_rent
@@ -333,6 +343,7 @@ server <- function(input, output) {
         }
     })
     
+    # ---- comparison plot ----
     output$comparisonPlot <- renderPlot({
         results_table <- mydata()
         comparison_plot_data <- results_table %>%
@@ -394,7 +405,8 @@ server <- function(input, output) {
                   text = element_text(size = 16)) +
             ylab("Expenses + Opportunity Cost (Millions)") +
             xlab("Year") + 
-            theme(legend.position="bottom")
+            theme(legend.position="bottom") +
+            scale_color_brewer(palette = 'Dark2') 
         
         # Add lines demarcating when renting/buying becomes advantageous
         for(i in switch_points$change_indices){
@@ -405,6 +417,7 @@ server <- function(input, output) {
         comp_plot
     })
     
+    # ---- worth plot ----
     output$worthPlot <- renderPlot({
         results_table <- mydata()
         worth_plot_data <- results_table %>% 
@@ -430,6 +443,7 @@ server <- function(input, output) {
                   text = element_text(size = 16))
     })
     
+    # ---- expense plot ----
     output$expensePlot <- renderPlot({
         results_table <- mydata()
         all_monthly_expenses <- c("mortgage",
@@ -473,6 +487,59 @@ server <- function(input, output) {
                   legend.position="bottom") 
     })
     
+    # ---- fire plot ----
+
+    output$firePlot <- renderPlot({
+        results_table <- mydata()
+        input_required_withdrawal_rate <- input$withdrawal_rate
+        fire_plot_data <- results_table %>%
+            mutate(total_expenses_rent = 12*(monthly_rent + monthly_other_expenses),
+                   total_expenses_buy = 12*(mortgage + pmi + property_tax + homeowners_insurance + hoa + repair + monthly_other_expenses),
+                   investments_rent = liquid_net_worth_rent,
+                   investments_buy = liquid_net_worth_buy,
+                   required_withdrawal_rate_rent = 100 * total_expenses_rent / investments_rent,
+                   required_withdrawal_rate_buy = 100 * total_expenses_buy / investments_buy) %>%
+            pivot_longer(cols = c(required_withdrawal_rate_rent, required_withdrawal_rate_buy),
+                   names_to = "choice",
+                   values_to = "required_withdrawal_rate") %>%
+            mutate(choice = ifelse(choice == "required_withdrawal_rate_rent",
+                                   "Rent",
+                                   "Buy")) 
+        
+        rent_to_fire_years <- fire_plot_data %>%
+            filter(required_withdrawal_rate <= input_required_withdrawal_rate &
+                       choice == "Rent") %>%
+            filter(year == min(year)) %>%
+            select(year)
+        buy_to_fire_years <- fire_plot_data %>%
+            filter(required_withdrawal_rate <= input_required_withdrawal_rate &
+                       choice == "Buy") %>%
+            filter(year == min(year)) %>%
+            select(year)
+        fire_title <- paste(ifelse(rent_to_fire_years <= buy_to_fire_years,
+                                   "Rent",
+                                   "Buy"),
+                            " to FIRE in ",
+                            min(rent_to_fire_years, buy_to_fire_years),
+                            " years",
+                            sep="")
+        
+        ggplot(fire_plot_data, aes(x=year, y=required_withdrawal_rate, col=choice)) +
+            geom_line() + 
+            ggtitle(fire_title) +
+            theme(legend.title = element_blank(),
+                  text = element_text(size = 16)) +
+            ylab("Expenses / Investments (%)") +
+            xlab("Year") + 
+            theme(legend.position="bottom") +
+            scale_color_brewer(palette = 'Dark2') +
+            geom_vline(xintercept=as.numeric(buy_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[1]) +
+            geom_vline(xintercept=as.numeric(rent_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[2]) + 
+            geom_hline(yintercept=input$withdrawal_rate, linetype="dashed", color="grey") +
+            xlim(1, max(as.numeric(rent_to_fire_years), as.numeric(buy_to_fire_years)))
+            
+        
+    })
     
     # Ensure these load on startup
     outputOptions(output, "historical_data_extras_ui", suspendWhenHidden = FALSE)
