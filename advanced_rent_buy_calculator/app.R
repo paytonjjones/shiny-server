@@ -1,5 +1,7 @@
 require(pacman)
-p_load(shiny, shinydashboard, FinancialMath, ggplot2, reshape2, gridExtra, dplyr, tidyr, RColorBrewer)
+p_load(shiny, shinydashboard, FinancialMath, ggplot2, 
+       reshape2, gridExtra, dplyr, tidyr, RColorBrewer,
+       scales)
 
 header <- dashboardHeader(
     title="Rent vs. Buy Advanced Calculator",
@@ -27,7 +29,7 @@ sidebar <- dashboardSidebar(
                      numericInput("monthly_rent", label = "Monthly Rent", 
                                   value = 2300, min = 0),
                      numericInput("initial_home_price", label = "Home Price", 
-                                  value = 420000, min = 0),
+                                  value = 440000, min = 0),
                      sliderInput("interest_rate", label = "Interest Rate",
                                  min = 0, max = 10, value = 3, step = 0.1),
                      sliderInput("downpayment_percent", label = "Downpayment (%)",
@@ -41,7 +43,7 @@ sidebar <- dashboardSidebar(
             menuItem(text="Forecast",
                      sliderInput("forecast_length", label = "Number of Years to Forecast",
                                  min = 1, max = 80, value = 35, step = 1),
-                     checkboxInput("use_historical_data", label = "Use Historical Stock Performance", value = TRUE),
+                     checkboxInput("use_historical_data", label = "Use Historical Stock Performance", value = FALSE),
                      uiOutput("historical_data_extras_ui"),
                      uiOutput("annualized_return_ui"),
                      startExpanded = FALSE
@@ -71,9 +73,13 @@ sidebar <- dashboardSidebar(
                                              min = 0, max = 2, value = 0.8, step = 0.1),
                                  sliderInput("homeowners_insurance", label = "Homeowner's Insurance Rate (% home value)",
                                              min = 0, max = 1, value = 0.45, step = 0.05),
-                                 checkboxInput("repairs_as_percentage_of_home", label = "Use % of home value for repairs", value = FALSE),
+                                 checkboxInput("repairs_as_percentage_of_home", label = "Use % of home value for repairs", value = TRUE),
                                  uiOutput("repairs_ui")
                                  ),
+                     menuItem(text = "Advanced - Rent",
+                              sliderInput("security_deposit", label = "Security Deposit (Months)",
+                                          min = 0, max = 5, value = 1, step = 1)
+                     ),
                      menuItem(text = "Advanced - Annual Increases",
                                  sliderInput("inflation", label = "Inflation (%)",
                                              min = 0, max = 4, value = 1.8, step = 0.1),
@@ -137,7 +143,7 @@ server <- function(input, output) {
     # ---- input management ----
     output$repairs_ui <- renderUI(
         if(input$repairs_as_percentage_of_home) {
-            sliderInput("repairs", label = "Yearly Repairs (% home value)", min = 0, max = 2, value = 0.35, step = 0.05)
+            sliderInput("repairs", label = "Yearly Repairs (% home value)", min = 0, max = 2, value = 0.45, step = 0.05)
         } else {
             numericInput("repairs", label = "Yearly Repairs ($)", 
                                   value = 1500, min = 0)
@@ -152,7 +158,7 @@ server <- function(input, output) {
             tagList(
                 checkboxInput("normalized_returns", label = "Normalize Stock Returns", value = TRUE),
                 sliderInput("starting_historical_year", label = "Start Year (Stock Price)",
-                            min = 1926, max = 2013, value = 1965, step = 1)
+                            min = 1926, max = 2013, value = 1960, step = 1)
             )
         })
     
@@ -163,7 +169,10 @@ server <- function(input, output) {
         
         # ---- calculator initialization ----
         req(!is.null(input$repairs))
-        req(input$use_historical_data | !is.null(input$annualized_return))
+        req((input$use_historical_data && !is.null(input$normalized_returns)) |
+                (!input$use_historical_data && !is.null(input$annualized_return))    
+            )
+        
         monthly_rent <- input$monthly_rent
         
         initial_home_price <- input$initial_home_price
@@ -179,11 +188,11 @@ server <- function(input, output) {
             colnames(returns) <- c("year", "percent_change")
             returns <- returns[returns$year %in% starting_historical_year:(starting_historical_year+forecast_length), ]
             returns$year <- returns$year - starting_historical_year + 1
-            req(!is.null(input$normalized_returns))
             if(input$normalized_returns){
                 returns_as_prod <- (returns$percent_change * .01) + 1
                 total_change <- prod(returns_as_prod)
                 annualized_return <- total_change^(1/forecast_length)
+                print(annualized_return)
                 returns$percent_change <- (annualized_return-1) * 100
             }
         } else {
@@ -200,6 +209,8 @@ server <- function(input, output) {
         pmi <- input$pmi
         homeowners_insurance <- input$homeowners_insurance
         repairs <- input$repairs
+        
+        security_deposit <- input$security_deposit
         
         inflation <- input$inflation
         rent_appreciation <- input$rent_appreciation
@@ -224,17 +235,17 @@ server <- function(input, output) {
                                 homeowners_insurance = numeric(), 
                                 hoa = numeric(), 
                                 repair = numeric(),
-                                net_worth_homeless = numeric())
+                                net_worth_free_housing = numeric())
         
-        net_worth_homeless <- starting_liquid_net_worth 
+        net_worth_free_housing <- starting_liquid_net_worth 
         
         # ---- Rent Setup ----
         
-        liquid_net_worth_rent <- starting_liquid_net_worth 
         current_income <- annual_income
         current_expenses <- annual_other_expenses
         current_rent <- monthly_rent
         equity <- 0
+        liquid_net_worth_rent <- starting_liquid_net_worth - security_deposit*monthly_rent
         
         # ---- Buy Setup ----
         
@@ -252,21 +263,20 @@ server <- function(input, output) {
         current_expenses <- annual_other_expenses
         equity <- downpayment_amount
         current_home_value <- initial_home_price
-        current_opportunity_cost <- 0
-        
+
         # ---- Year by Year Calculator ----
         
         for(year in 1:forecast_length){
             
-            current_income <- current_income * (1+annual_income_increase*.01)
-            current_expenses <- current_expenses * (1 + lifestyle_inflation/100)
+            current_income <- current_income * (1 + annual_income_increase*.01)
+            current_expenses <- current_expenses * (1 + lifestyle_inflation*.01)
             
-            # Homeless Calculations
+            # Free Housing Calculations (to Compare)
             
-            net_worth_homeless <- net_worth_homeless * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
-            net_worth_homeless <- net_worth_homeless / (1 + inflation*.01)
-            extra_invested_homeless <- current_income*(1 - effective_tax_rate*.01) - current_expenses
-            net_worth_homeless <- net_worth_homeless + extra_invested_homeless
+            net_worth_free_housing <- net_worth_free_housing * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
+            net_worth_free_housing <- net_worth_free_housing / (1 + inflation*.01)
+            extra_invested_free_housing <- current_income*(1 - effective_tax_rate*.01) - current_expenses
+            net_worth_free_housing <- net_worth_free_housing + extra_invested_free_housing
             
             # Rent Calculations
             
@@ -286,15 +296,14 @@ server <- function(input, output) {
             if(balance_remaining < 0.8 * initial_home_price){
                 pmi <- 0
             }
-            current_pmi <- (pmi*balance_remaining)/(12*100)
-            current_property_tax <- (property_tax_rate*current_home_value)/(12*100)
-            current_homeowners_insurance <-  (homeowners_insurance*current_home_value)/(12*100)
+            current_pmi <- (.01*pmi*balance_remaining)/12
+            current_property_tax <- (.01*property_tax_rate*current_home_value)/12
+            current_homeowners_insurance <-  (.01*homeowners_insurance*current_home_value)/12
             current_piti <- current_mortgage + current_pmi + current_property_tax + current_homeowners_insurance + monthly_hoa_fees
             percentage_home_ownership <- (initial_home_price - balance_remaining) / initial_home_price
             current_equity <- current_home_value * percentage_home_ownership
             repair_cost <- if(input$repairs_as_percentage_of_home) { 
-                # Wait until repairs updates to percentage value
-                req(repairs <= 1)
+                req(repairs <= 1) # Upon change to repairs_as_percentage_of_home, wait until repairs value updates from dollar amount
                 (repairs/100) * current_home_value
             } else {
                 repairs * (1+inflation*.01)^year
@@ -317,7 +326,7 @@ server <- function(input, output) {
                             homeowners_insurance = current_homeowners_insurance,
                             hoa = monthly_hoa_fees,
                             repair = repair_cost/12,
-                            net_worth_homeless = net_worth_homeless)
+                            net_worth_free_housing = net_worth_free_housing)
             }
         }
         
@@ -347,8 +356,8 @@ server <- function(input, output) {
     output$comparisonPlot <- renderPlot({
         results_table <- mydata()
         comparison_plot_data <- results_table %>%
-            mutate(buy_cost = net_worth_homeless - liquid_net_worth_buy - equity,
-                   rent_cost = net_worth_homeless - liquid_net_worth_rent) %>%
+            mutate(buy_cost = net_worth_free_housing - liquid_net_worth_buy - equity,
+                   rent_cost = net_worth_free_housing - liquid_net_worth_rent) %>%
             pivot_longer(cols = c(buy_cost, rent_cost),
                          names_to = "choice") %>%
             mutate(choice = factor(choice, levels = c("buy_cost", "rent_cost"), labels = c("Buy", "Rent")))
@@ -524,19 +533,23 @@ server <- function(input, output) {
                             " years",
                             sep="")
         
-        ggplot(fire_plot_data, aes(x=year, y=required_withdrawal_rate, col=choice)) +
+        ggplot(fire_plot_data, aes(x=year, y=required_withdrawal_rate*.01, col=choice)) +
             geom_line() + 
             ggtitle(fire_title) +
             theme(legend.title = element_blank(),
                   text = element_text(size = 16)) +
             ylab("Expenses / Investments (%)") +
+            scale_y_continuous(labels = percent) +
             xlab("Year") + 
             theme(legend.position="bottom") +
             scale_color_brewer(palette = 'Dark2') +
             geom_vline(xintercept=as.numeric(buy_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[1]) +
             geom_vline(xintercept=as.numeric(rent_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[2]) + 
-            geom_hline(yintercept=input$withdrawal_rate, linetype="dashed", color="grey") +
-            xlim(1, max(as.numeric(rent_to_fire_years), as.numeric(buy_to_fire_years)))
+            geom_hline(yintercept=input$withdrawal_rate*.01, linetype="dashed", color="grey") +
+            xlim(1, max(as.numeric(rent_to_fire_years), as.numeric(buy_to_fire_years))) +
+            annotate(geom="text", x=1.5, y=input$withdrawal_rate*1.3*.01, 
+                     label=paste(round(input$withdrawal_rate, 2), "%", sep=""), 
+                     color="black")
             
         
     })
