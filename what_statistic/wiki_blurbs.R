@@ -21,10 +21,10 @@ generate_html_wiki <- function(title, description, rcode,
 }
 
 # ---- students_t ----
-wiki$students_t <- generate_html_wiki("Student's t-test", "A t-test is any statistical hypothesis test in which the test statistic follows a Student's t-distribution under the null hypothesis. It can be used to determine if two sets of data are significantly different from each other.</div></p> <p><div> A t-test is most commonly applied when the test statistic would follow a normal distribution if the value of a scaling term in the test statistic were known. When the scaling term is unknown and is replaced by an estimate based on the data, the test statistics (under certain conditions) follow a Student's t distribution.", "t.test(vector, mu = 0)")
+wiki$onesamplet <- generate_html_wiki("Student's t-test", "A t-test is any statistical hypothesis test in which the test statistic follows a Student's t-distribution under the null hypothesis. It can be used to determine if two sets of data are significantly different from each other.</div></p> <p><div> A t-test is most commonly applied when the test statistic would follow a normal distribution if the value of a scaling term in the test statistic were known. When the scaling term is unknown and is replaced by an estimate based on the data, the test statistics (under certain conditions) follow a Student's t distribution.", "t.test(vector, mu = 0)")
 
 # ---- one_sample_median ----
-wiki$one_sample_median <- "<h2 style=\"display: inline;\">One-sample median</h2>
+wiki$onesamplem <- "<h2 style=\"display: inline;\">One-sample median</h2>
                          <body><div> from the UCLA Institute for Digital Research and Education </div></body>
                          <p><div>A one sample median test allows us to test whether a sample median differs significantly from a hypothesized value.  The one-sample median is similar to a one-sample t-test, but we do not need to assume that it is interval and normally distributed (we only need to assume that our variable is an ordinal variable).</div></p>
                          <h3><div>One-sample median in R  </div></h3>

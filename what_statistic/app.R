@@ -330,68 +330,15 @@ server <- function(input, output) {
   })
   
   explain <- reactiveValues(data = NULL)
-  observeEvent(input$onesamplet_link, {
-    explain$wiki <- HTML(wiki$students_t)})
-  observeEvent(input$onesamplem_link, {
-    explain$wiki <- HTML(wiki$one_sample_median)})
-  observeEvent(input$binom_link, {
-    explain$wiki <- HTML(wiki$binom)})
-  observeEvent(input$chisqgof_link, {
-    explain$wiki <- HTML(wiki$chisqgof)})
-  observeEvent(input$indept_link, {
-    explain$wiki <- HTML(wiki$indept)})
-  observeEvent(input$wmw_link, {
-    explain$wiki <- HTML(wiki$wmw)})
-  observeEvent(input$chisq_link, {
-    explain$wiki <- HTML(wiki$chisq)})
-  observeEvent(input$fisher_link, {
-    explain$wiki <- HTML(wiki$fisher)})
-  observeEvent(input$anova_link, {
-    explain$wiki <- HTML(wiki$anova)})
-  observeEvent(input$kw_link, {
-    explain$wiki <- HTML(wiki$kw)})
-  observeEvent(input$pairedt_link, {
-    explain$wiki <- HTML(wiki$pairedt)})
-  observeEvent(input$wsrt_link, {
-    explain$wiki <- HTML(wiki$wsrt)})
-  observeEvent(input$mcnemar_link, {
-    explain$wiki <- HTML(wiki$mcnemar)})
-  observeEvent(input$rmanova_link, {
-    explain$wiki <- HTML(wiki$rmanova)})
-  observeEvent(input$friedman_link, {
-    explain$wiki <- HTML(wiki$friedman)})
-  observeEvent(input$rmlog_link, {
-    explain$wiki <- HTML(wiki$rmlog)})
-  observeEvent(input$facanova_link, {
-    explain$wiki <- HTML(wiki$facanova)})
-  observeEvent(input$ordlog_link, {
-    explain$wiki <- HTML(wiki$ordlog)})
-  observeEvent(input$faclog_link, {
-    explain$wiki <- HTML(wiki$faclog)})
-  observeEvent(input$corr_link, {
-    explain$wiki <- HTML(wiki$corr)})
-  observeEvent(input$reg_link, {
-    explain$wiki <- HTML(wiki$reg)})
-  observeEvent(input$npc_link, {
-    explain$wiki <- HTML(wiki$npc)})
-  observeEvent(input$log_link, {
-    explain$wiki <- HTML(wiki$log)})
-  observeEvent(input$multreg_link, {
-    explain$wiki <- HTML(wiki$multreg)})
-  observeEvent(input$ancova_link, {
-    explain$wiki <- HTML(wiki$ancova)})
-  observeEvent(input$multlog_link, {
-    explain$wiki <- HTML(wiki$multlog)})
-  observeEvent(input$disc_link, {
-    explain$wiki <- HTML(wiki$disc)})
-  observeEvent(input$manova_link, {
-    explain$wiki <- HTML(wiki$manova)})
-  observeEvent(input$manova2_link, {
-    explain$wiki <- HTML(wiki$manova2)})
-  observeEvent(input$mmreg_link, {
-    explain$wiki <- HTML(wiki$mmreg)})
-  observeEvent(input$factora_link, {
-    explain$wiki <- HTML(wiki$factora)})
+  
+  # create an observeEvent for each wiki entry
+  lapply(1:length(wiki), function(x){
+    name <- names(wiki)[x]
+    observeEvent(input[[paste(name, "link", sep="_")]], {
+      explain$wiki <- HTML(wiki[[name]])
+    })
+  })
+  
   output$Wikipedia <- renderUI({
     explain$wiki
   })
