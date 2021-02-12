@@ -13,7 +13,7 @@ image:
   focal_point: ""
   preview_only: false
 projects: []
-publication: '*Psychometrika, 85*, 926-945'
+publication: '*Psychometrika, 85*, 926-945. https://doi.org/10.1007/s11336-020-09731-4'
 publication_short: ""
 publication_types:
 - "2"
@@ -22,11 +22,11 @@ summary:
 title: 'Network trees: A method for recursively partitioning covariance structures'
 url_code: ""
 url_dataset: ""
-url_pdf: https://www.zeileis.org/papers/Jones+Mair+Simon-2020.pdf
+url_pdf: "publication/networktree/Jones+Mair+Simon-2020.pdf"
 url_poster: ""
 url_project: ""
 url_slides: ""
-url_source: https://doi.org/10.1007/s11336-020-09731-4
+url_source: 
 url_video: ""
 ---
 

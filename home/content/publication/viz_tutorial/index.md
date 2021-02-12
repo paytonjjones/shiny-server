@@ -12,7 +12,7 @@ image:
   focal_point: ""
   preview_only: false
 projects: []
-publication: '*Frontiers in Psychology, 9*, 1742'
+publication: '*Frontiers in Psychology, 9*, 1742. https://doi.org/10.3389/fpsyg.2018.01742'
 publication_short: ""
 publication_types:
 - "2"
@@ -21,11 +21,11 @@ summary:
 title: 'Visualizing psychological networks: A tutorial in R'
 url_code: ""
 url_dataset: ""
-url_pdf: https://www.frontiersin.org/articles/10.3389/fpsyg.2018.01742/pdf
+url_pdf: "publication/viz_tutorial/fpsyg-09-01742.pdf"
 url_poster: ""
 url_project: ""
 url_slides: ""
-url_source: https://doi.org/10.3389/fpsyg.2018.01742
+url_source: ""
 url_video: ""
 ---
 
