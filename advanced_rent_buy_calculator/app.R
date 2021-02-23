@@ -95,10 +95,18 @@ sidebar <- dashboardSidebar(
                      menuItem(text = "Advanced - Taxes",
                                  sliderInput("property_tax_rate", label = "Yearly Property Tax (%)",
                                              min = 0.8, max = 2, value = 1.3, step = 0.1),
-                                 sliderInput("effective_tax_rate", label = "Effective Tax Rate (%)",
-                                             min = 0, max = 50, value = 21, step = 1),
                                  sliderInput("cap_gains", label = "Capital Gains Tax (%)",
-                                             min = 0, max = 25, value = 15, step = 1)
+                                             min = 0, max = 25, value = 15, step = 1),
+                                 numericInput("retirement_deductions", label = "Deductible 401k/IRA Contributions", 
+                                             value = 6000, min = 0),
+                                 numericInput("other_itemized_deductions", label = "Possible Itemized Deductions", 
+                                             value = 1000, min = 0),
+                                 selectInput("filing_status", label = "Tax Filing Status",
+                                             choices = c("Single", 
+                                                         "Married Filing Jointly", 
+                                                         "Married Filing Separately", 
+                                                         "Head of Household"), 
+                                             selected = "Married Filing Jointly")
                                  ),
                      menuItem(text = "Advanced - FIRE",
                               checkboxInput("fire", label = "Show Time to FIRE Plot", value = FALSE),
@@ -248,8 +256,10 @@ server <- function(input, output, session) {
         lifestyle_inflation <- input$lifestyle_inflation
 
         property_tax_rate <- input$property_tax_rate
-        effective_tax_rate <- input$effective_tax_rate
         cap_gains <- input$cap_gains
+        other_itemized_deductions <- input$other_itemized_deductions
+        retirement_deductions <- input$retirement_deductions
+        filing_status <- input$filing_status
         
         results_table <- tibble(year = numeric(),
                                 liquid_net_worth_rent = numeric(),
@@ -304,7 +314,11 @@ server <- function(input, output, session) {
             
             net_worth_free_housing <- net_worth_free_housing * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
             net_worth_free_housing <- net_worth_free_housing / (1 + inflation*.01)
-            extra_invested_free_housing <- current_income*(1 - effective_tax_rate*.01) - current_expenses
+            federal_tax_free <- federal_tax_calculator(gross_income = current_income, 
+                                                       retirement_deductions = retirement_deductions, 
+                                                       itemized_deductions = other_itemized_deductions,
+                                                       filing_status = filing_status)
+            extra_invested_free_housing <- current_income - federal_tax_free - current_expenses
             net_worth_free_housing <- net_worth_free_housing + extra_invested_free_housing
             
             # Rent Calculations
@@ -312,7 +326,7 @@ server <- function(input, output, session) {
             liquid_net_worth_rent <- liquid_net_worth_rent * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
             liquid_net_worth_rent <- liquid_net_worth_rent / (1 + inflation*.01)
             current_rent <- current_rent * (1 + rent_appreciation/100)
-            extra_invested_rent <- current_income*(1 - effective_tax_rate*.01) - current_expenses - current_rent*12
+            extra_invested_rent <- current_income - federal_tax_free - current_expenses - current_rent*12
             liquid_net_worth_rent <- liquid_net_worth_rent + extra_invested_rent
             
             # Buy Calculations
@@ -337,8 +351,17 @@ server <- function(input, output, session) {
             } else {
                 repairs * (1+inflation*.01)^year
             }
-            extra_invested_buy <- current_income*(1 - effective_tax_rate*.01) - current_expenses - current_piti*12 - repair_cost
+            mortgage_interest_deduction <- mortgage_deduction_calculator(amort_table = amort, 
+                                                                         year = year,
+                                                                         filing_status = filing_status)
+            buy_itemized_deductions <- mortgage_interest_deduction + other_itemized_deductions
+            federal_tax_buy <- federal_tax_calculator(gross_income = current_income, 
+                                                  retirement_deductions = retirement_deductions, 
+                                                  itemized_deductions = buy_itemized_deductions,
+                                                  filing_status = filing_status)
+            extra_invested_buy <- current_income - federal_tax_buy - current_expenses - current_piti*12 - repair_cost
             liquid_net_worth_buy <- liquid_net_worth_buy + extra_invested_buy
+
             
             if(length(liquid_net_worth_buy)>0){
                 results_table <- results_table %>% 
@@ -617,6 +640,46 @@ server <- function(input, output, session) {
 
 
 # ---- helpers ----
+
+federal_tax_calculator <- function(gross_income, 
+                                   retirement_deductions, 
+                                   itemized_deductions,
+                                   filing_status){
+    load("tax_brackets.Rdata")
+    bracket_info <- tax_brackets[[filing_status]]
+    best_deduction <- max(c(itemized_deductions, 
+                            bracket_info$standard_deduction))
+    taxable_income <- gross_income - retirement_deductions - best_deduction
+    
+    tax <- 0
+    for(i in 1:nrow(bracket_info)){
+        if(taxable_income > bracket_info[i, "bracket_low"]){
+            if(taxable_income > bracket_info[i, "bracket_high"]){
+                tax <- tax + (bracket_info[i, "bracket_high"] - bracket_info[i, "bracket_low"]) * bracket_info[i, "rate"]
+            } else {
+                tax <- tax + (taxable_income - bracket_info[i, "bracket_low"]) * bracket_info[i, "rate"]
+            }
+        }
+    }
+    return(tax)
+}
+
+mortgage_deduction_calculator <- function(amort_table, year, filing_status){
+    amort_table <- rbind(amort_table$Schedule,
+                         matrix(0, nrow = 99999, ncol=ncol(amort_table$Schedule)))
+    total_mortgage_interest_paid <- amort_table[((year-1)*12 + 1):(year*12), "Interest Paid"] %>% sum
+    principal <- amort_table[((year-1)*12 + 1):(year*12), "Balance"] %>% mean
+    deductible_principal <- switch(filing_status,
+                                   "Single" = 750000,
+                                   "Married Filing Jointly" = 750000,
+                                   "Married Filing Separately" = 375000,
+                                   "Head of Household" = 750000)
+    mortgage_deduction <- min(total_mortgage_interest_paid,
+                              total_mortgage_interest_paid * (deductible_principal / principal),
+                              na.rm=T)
+    return(mortgage_deduction)
+}
+
 comparison_switch_points <- function(boolean_vector){
     ref_bool <- start_bool <- boolean_vector[1]
     change_indices <- c()

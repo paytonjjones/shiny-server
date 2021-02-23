@@ -45,3 +45,4 @@ vignettes/*.pdf
 # advanced_rent_buy_calculator
 
 advanced_rent_buy_calculator/*.Rdata
+!advanced_rent_buy_calculator/tax_brackets.Rdata
