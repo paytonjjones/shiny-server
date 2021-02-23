@@ -101,7 +101,7 @@ sidebar <- dashboardSidebar(
                                              min = 0, max = 25, value = 15, step = 1)
                                  ),
                      menuItem(text = "Advanced - FIRE",
-                              checkboxInput("show_fire_plot", label = "Show Time to FIRE Plot", value = FALSE),
+                              checkboxInput("fire", label = "Show Time to FIRE Plot", value = FALSE),
                               sliderInput("withdrawal_rate", label = "FIRE Withdrawal Rate",
                                           min = 0.5, max = 6, value = 3.2, step = 0.1)
                      ),
@@ -113,32 +113,61 @@ sidebar <- dashboardSidebar(
 # ---- body ----
 
 body <- dashboardBody(
-    h3("Total Costs"),
-    plotOutput("comparisonPlot", width = "100%", height = "500px"),
+    conditionalPanel("input.fire", 
+                     h3("Time to FIRE"),
+                     plotOutput("firePlot", width = "100%", height = "500px")),
+    h3("Monthly Housing Expenses"),
+    plotOutput("expensePlot", width = "100%", height = "500px"),
     h3("Net Worth"),
     textOutput("net_worth_warnings"),
     plotOutput("worthPlot", width = "100%", height = "500px"),
-    h3("Monthly Housing Expenses"),
-    plotOutput("expensePlot", width = "100%", height = "500px"),
-    conditionalPanel("input.show_fire_plot", 
-                     h3("Time to FIRE"),
-                     plotOutput("firePlot", width = "100%", height = "500px")),
-    tags$div(
-        tags$br(),
-        tags$p("Did I save you time or money? Please donate $10 to keep this tool free."),
-        HTML("<form action=\"https://www.paypal.com/donate\" method=\"post\" target=\"_top\">
-                 <input type=\"hidden\" name=\"business\" value=\"WG8BX27Z3QB92\" />
-                 <input type=\"hidden\" name=\"item_name\" value=\"Creating freely available data analysis tools\" />
-                 <input type=\"hidden\" name=\"currency_code\" value=\"USD\" />
-                 <input type=\"image\" src=\"https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif\" 
-                 border=\"0\" name=\"submit\" title=\"PayPal - The safer, easier way to pay online!\" alt=\"Donate with PayPal button\" />
-                 <img alt=\"\" border=\"0\" src=\"https://www.paypal.com/en_US/i/scr/pixel.gif\" width=\"1\" height=\"1\" />
-                 </form>")
-    )
+    h3("Total Costs"),
+    plotOutput("comparisonPlot", width = "100%", height = "500px"),
+
+    # tags$div(
+    #     tags$br(),
+    #     tags$p("Did I save you time or money? Please donate $10 to keep this tool free."),
+    #     HTML("<form action=\"https://www.paypal.com/donate\" method=\"post\" target=\"_top\">
+    #              <input type=\"hidden\" name=\"business\" value=\"WG8BX27Z3QB92\" />
+    #              <input type=\"hidden\" name=\"item_name\" value=\"Creating freely available data analysis tools\" />
+    #              <input type=\"hidden\" name=\"currency_code\" value=\"USD\" />
+    #              <input type=\"image\" src=\"https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif\" 
+    #              border=\"0\" name=\"submit\" title=\"PayPal - The safer, easier way to pay online!\" alt=\"Donate with PayPal button\" />
+    #              <img alt=\"\" border=\"0\" src=\"https://www.paypal.com/en_US/i/scr/pixel.gif\" width=\"1\" height=\"1\" />
+    #              </form>")
+    # )
 )
 
 # ---- server ----
-server <- function(input, output) {
+server <- function(input, output, session) {
+    
+    # ---- tag management ----
+    # from https://stackoverflow.com/questions/32872222/how-do-you-pass-parameters-to-a-shiny-app-via-url
+    observe({
+        query <- parseQueryString(session$clientData$url_search)
+        numeric_inputs <- c("monthly_rent", "initial_home_price", 
+                            "starting_liquid_net_worth", "annual_income", 
+                            "annual_other_expenses")
+        select_inputs <- c("term")
+        checkbox_inputs <- c("use_historical_data", "repairs_as_percentage_of_home", "fire")
+        for (i in 1:(length(reactiveValuesToList(input)))) {
+            nameval = names(reactiveValuesToList(input)[i])
+            if (!is.null(query[[nameval]])) {
+                if(nameval %in% numeric_inputs){
+                    updateNumericInput(session, nameval, value = as.numeric(query[[nameval]]))
+                } else if(nameval %in% select_inputs){
+                    updateSelectInput(session, nameval, selected = query[[nameval]])
+                } else if(nameval %in% checkbox_inputs){
+                    updateCheckboxInput(session, nameval, value = query[[nameval]])
+                } else {
+                    # As a default, assumes tags are slider inputs
+                    updateSliderInput(session, nameval, value = as.numeric(query[[nameval]]))
+                }
+            }
+            
+        }
+        
+    })
     
     # ---- input management ----
     output$repairs_ui <- renderUI(
@@ -525,15 +554,30 @@ server <- function(input, output) {
                        choice == "Buy") %>%
             filter(year == min(year)) %>%
             select(year)
-        fire_title <- paste(ifelse(rent_to_fire_years <= buy_to_fire_years,
-                                   "Rent",
-                                   "Buy"),
-                            " to FIRE in ",
-                            min(rent_to_fire_years, buy_to_fire_years),
-                            " years",
-                            sep="")
-        
-        ggplot(fire_plot_data, aes(x=year, y=required_withdrawal_rate*.01, col=choice)) +
+        if(nrow(buy_to_fire_years)==0){
+            buy_to_fire_years <- buy_to_fire_years %>%
+                add_row(year = Inf)
+        }  
+        if(nrow(rent_to_fire_years)==0){
+            rent_to_fire_years <- rent_to_fire_years %>%
+                add_row(year = Inf)
+        } 
+        if(buy_to_fire_years == Inf && rent_to_fire_years == Inf){
+            fire_title <- "You cannot fire within the timeline"
+        } else {
+            fire_title <- paste(ifelse(rent_to_fire_years <= buy_to_fire_years,
+                                       "Rent",
+                                       "Buy"),
+                                " to FIRE in ",
+                                min(rent_to_fire_years, buy_to_fire_years),
+                                " years",
+                                sep="")
+        }
+
+        x_max <- min(max(as.numeric(rent_to_fire_years), as.numeric(buy_to_fire_years)),
+                     input$forecast_length)
+        ggplot_fire <- 
+            ggplot(fire_plot_data, aes(x=year, y=required_withdrawal_rate*.01, col=choice)) +
             geom_line() + 
             ggtitle(fire_title) +
             theme(legend.title = element_blank(),
@@ -543,15 +587,24 @@ server <- function(input, output) {
             xlab("Year") + 
             theme(legend.position="bottom") +
             scale_color_brewer(palette = 'Dark2') +
-            geom_vline(xintercept=as.numeric(buy_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[1]) +
-            geom_vline(xintercept=as.numeric(rent_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[2]) + 
             geom_hline(yintercept=input$withdrawal_rate*.01, linetype="dashed", color="grey") +
-            xlim(1, max(as.numeric(rent_to_fire_years), as.numeric(buy_to_fire_years))) +
+            xlim(1, x_max) +
             annotate(geom="text", x=1.5, y=input$withdrawal_rate*1.3*.01, 
                      label=paste(round(input$withdrawal_rate, 2), "%", sep=""), 
                      color="black")
-            
         
+        if(as.numeric(buy_to_fire_years) < input$forecast_length) {
+            ggplot_fire <- ggplot_fire + 
+                geom_vline(xintercept=as.numeric(buy_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[1]) 
+        }
+        if(as.numeric(rent_to_fire_years) < input$forecast_length) {
+            ggplot_fire <- ggplot_fire +
+                geom_vline(xintercept=as.numeric(rent_to_fire_years)-0.5, linetype="dashed", color=brewer.pal(3, "Dark2")[2]) 
+        }
+        
+
+        return(ggplot_fire)
+            
     })
     
     # Ensure these load on startup
