@@ -97,6 +97,8 @@ sidebar <- dashboardSidebar(
                                              min = 0.8, max = 2, value = 1.3, step = 0.1),
                                  sliderInput("cap_gains", label = "Capital Gains Tax (%)",
                                              min = 0, max = 25, value = 15, step = 1),
+                                 sliderInput("state_tax_rate", label = "State Tax (%)",
+                                             min = 0, max = 15, value = 5, step = 0.1),
                                  numericInput("retirement_deductions", label = "Deductible 401k/IRA Contributions", 
                                              value = 6000, min = 0),
                                  numericInput("other_itemized_deductions", label = "Possible Itemized Deductions", 
@@ -257,6 +259,7 @@ server <- function(input, output, session) {
 
         property_tax_rate <- input$property_tax_rate
         cap_gains <- input$cap_gains
+        state_tax_rate <- input$state_tax_rate
         other_itemized_deductions <- input$other_itemized_deductions
         retirement_deductions <- input$retirement_deductions
         filing_status <- input$filing_status
@@ -314,11 +317,14 @@ server <- function(input, output, session) {
             
             net_worth_free_housing <- net_worth_free_housing * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
             net_worth_free_housing <- net_worth_free_housing / (1 + inflation*.01)
-            federal_tax_free <- federal_tax_calculator(gross_income = current_income, 
-                                                       retirement_deductions = retirement_deductions, 
-                                                       itemized_deductions = other_itemized_deductions,
+            taxable_income_free <- taxable_income(gross_income = current_income, 
+                                                  retirement_deductions = retirement_deductions, 
+                                                  itemized_deductions = other_itemized_deductions,
+                                                  filing_status = filing_status)
+            federal_tax_free <- federal_tax_calculator(taxable_income = taxable_income_free,
                                                        filing_status = filing_status)
-            extra_invested_free_housing <- current_income - federal_tax_free - current_expenses
+            state_tax_free <- taxable_income_free * state_tax_rate * .01
+            extra_invested_free_housing <- current_income - federal_tax_free - state_tax_free - current_expenses
             net_worth_free_housing <- net_worth_free_housing + extra_invested_free_housing
             
             # Rent Calculations
@@ -326,7 +332,7 @@ server <- function(input, output, session) {
             liquid_net_worth_rent <- liquid_net_worth_rent * (1 + returns[returns$year == year,"percent_change"]*.01*(1-cap_gains/100))
             liquid_net_worth_rent <- liquid_net_worth_rent / (1 + inflation*.01)
             current_rent <- current_rent * (1 + rent_appreciation/100)
-            extra_invested_rent <- current_income - federal_tax_free - current_expenses - current_rent*12
+            extra_invested_rent <- current_income - federal_tax_free - state_tax_free - current_expenses - current_rent*12
             liquid_net_worth_rent <- liquid_net_worth_rent + extra_invested_rent
             
             # Buy Calculations
@@ -355,10 +361,13 @@ server <- function(input, output, session) {
                                                                          year = year,
                                                                          filing_status = filing_status)
             buy_itemized_deductions <- mortgage_interest_deduction + other_itemized_deductions
-            federal_tax_buy <- federal_tax_calculator(gross_income = current_income, 
+            taxable_income_buy <- taxable_income(gross_income = current_income, 
                                                   retirement_deductions = retirement_deductions, 
                                                   itemized_deductions = buy_itemized_deductions,
                                                   filing_status = filing_status)
+            federal_tax_buy <- federal_tax_calculator(taxable_income = taxable_income_buy,
+                                                  filing_status = filing_status)
+            state_tax_buy <- taxable_income_buy * state_tax_rate * .01
             extra_invested_buy <- current_income - federal_tax_buy - current_expenses - current_piti*12 - repair_cost
             liquid_net_worth_buy <- liquid_net_worth_buy + extra_invested_buy
 
@@ -641,16 +650,21 @@ server <- function(input, output, session) {
 
 # ---- helpers ----
 
-federal_tax_calculator <- function(gross_income, 
-                                   retirement_deductions, 
-                                   itemized_deductions,
-                                   filing_status){
+taxable_income <- function(gross_income,
+                           retirement_deductions,
+                           itemized_deductions,
+                           filing_status){
     load("tax_brackets.Rdata")
     bracket_info <- tax_brackets[[filing_status]]
     best_deduction <- max(c(itemized_deductions, 
                             bracket_info$standard_deduction))
     taxable_income <- gross_income - retirement_deductions - best_deduction
-    
+}
+
+federal_tax_calculator <- function(taxable_income,
+                                   filing_status){
+    load("tax_brackets.Rdata")
+    bracket_info <- tax_brackets[[filing_status]]
     tax <- 0
     for(i in 1:nrow(bracket_info)){
         if(taxable_income > bracket_info[i, "bracket_low"]){
