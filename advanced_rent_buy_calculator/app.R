@@ -368,7 +368,7 @@ server <- function(input, output, session) {
             federal_tax_buy <- federal_tax_calculator(taxable_income = taxable_income_buy,
                                                   filing_status = filing_status)
             state_tax_buy <- taxable_income_buy * state_tax_rate * .01
-            extra_invested_buy <- current_income - federal_tax_buy - current_expenses - current_piti*12 - repair_cost
+            extra_invested_buy <- current_income - federal_tax_buy - state_tax_buy - current_expenses - current_piti*12 - repair_cost
             liquid_net_worth_buy <- liquid_net_worth_buy + extra_invested_buy
 
             
@@ -650,11 +650,20 @@ server <- function(input, output, session) {
 
 # ---- helpers ----
 
+read_tax_brackets <- function(){
+    tax_brackets <- list()
+    tax_brackets$`Single Filer` <- read.csv('tax_brackets/single_filers.csv')
+    tax_brackets$`Married Filing Jointly` <- read.csv('tax_brackets/married_filing_jointly.csv')
+    tax_brackets$`Married Filing Separately` <- read.csv('tax_brackets/married_filing_separately.csv')
+    tax_brackets$`Head of Household` <- read.csv('tax_brackets/head_of_household.csv')
+    return(tax_brackets)
+}
+
 taxable_income <- function(gross_income,
                            retirement_deductions,
                            itemized_deductions,
                            filing_status){
-    load("tax_brackets.Rdata")
+    tax_brackets <- read_tax_brackets()
     bracket_info <- tax_brackets[[filing_status]]
     best_deduction <- max(c(itemized_deductions, 
                             bracket_info$standard_deduction))
@@ -663,7 +672,7 @@ taxable_income <- function(gross_income,
 
 federal_tax_calculator <- function(taxable_income,
                                    filing_status){
-    load("tax_brackets.Rdata")
+    tax_brackets <- read_tax_brackets()
     bracket_info <- tax_brackets[[filing_status]]
     tax <- 0
     for(i in 1:nrow(bracket_info)){
