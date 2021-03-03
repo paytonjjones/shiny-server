@@ -5,12 +5,20 @@
     <link>/publication/</link>
       <atom:link href="/publication/index.xml" rel="self" type="application/rss+xml" />
     <description>Publications</description>
-    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Wed, 01 Jan 2020 00:00:00 +0000</lastBuildDate>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Wed, 03 Mar 2021 00:00:00 +0000</lastBuildDate>
     <image>
       <url>/images/logo_hu55399b882dcd9d8fbe3ae8d74dceeb2f_9002_300x300_fit_lanczos_2.png</url>
       <title>Publications</title>
       <link>/publication/</link>
     </image>
+    
+    <item>
+      <title>The Neurotic Treadmill: Decreasing Adversity, Increasing Vulnerability?</title>
+      <link>/publication/dissertation/</link>
+      <pubDate>Wed, 03 Mar 2021 00:00:00 +0000</pubDate>
+      <guid>/publication/dissertation/</guid>
+      <description></description>
+    </item>
     
     <item>
       <title>Network trees: A method for recursively partitioning covariance structures</title>
