@@ -1,7 +1,15 @@
 require(pacman)
-p_load(shiny, shinydashboard, FinancialMath, ggplot2, 
-       reshape2, gridExtra, dplyr, tidyr, RColorBrewer,
-       scales)
+require(shiny)
+require(shinydashboard)
+require(FinancialMath)
+require(ggplot2)
+require(reshape2)
+require(gridExtra)
+require(dplyr)
+require(RColorBrewer)
+require(scales)
+require(tidyr)
+
 
 header <- dashboardHeader(
     title="Rent vs. Buy Advanced Calculator",
