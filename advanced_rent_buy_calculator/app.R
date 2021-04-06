@@ -41,9 +41,9 @@ sidebar <- dashboardSidebar(
                      sliderInput("interest_rate", label = "Interest Rate",
                                  min = 0, max = 10, value = 3, step = 0.1),
                      sliderInput("downpayment_percent", label = "Downpayment (%)",
-                                 min = 0, max = 30, value = 5, step = 1),
-                     selectInput("term", label = "Mortgage Term",
-                                 choices = c(15,30), selected = 30),
+                                 min = 0, max = 100, value = 5, step = 1),
+                     sliderInput("term", label = "Mortgage Term",
+                                 min = 5, max = 40, value = 30, step = 1),
                      startExpanded = TRUE
                      ),
             
@@ -102,7 +102,7 @@ sidebar <- dashboardSidebar(
                                  ),
                      menuItem(text = "Advanced - Taxes",
                                  sliderInput("property_tax_rate", label = "Yearly Property Tax (%)",
-                                             min = 0.8, max = 2, value = 1.3, step = 0.1),
+                                             min = 0, max = 4, value = 1.3, step = 0.1),
                                  sliderInput("cap_gains", label = "Capital Gains Tax (%)",
                                              min = 0, max = 25, value = 15, step = 1),
                                  sliderInput("state_tax_rate", label = "State Tax (%)",
@@ -166,8 +166,8 @@ server <- function(input, output, session) {
         numeric_inputs <- c("monthly_rent", "initial_home_price", 
                             "starting_liquid_net_worth", "annual_income", 
                             "annual_other_expenses")
-        select_inputs <- c("term")
         checkbox_inputs <- c("use_historical_data", "repairs_as_percentage_of_home", "fire")
+        select_inputs <- c("filing_status")
         for (i in 1:(length(reactiveValuesToList(input)))) {
             nameval = names(reactiveValuesToList(input)[i])
             if (!is.null(query[[nameval]])) {
@@ -302,7 +302,7 @@ server <- function(input, output, session) {
         downpayment_amount <- initial_home_price * (downpayment_percent/100)
         closing_amount <- initial_home_price * (closing/100)
         monthly_interest_percent <- .01 * interest_rate/12
-        principal <- initial_home_price - downpayment_amount
+        principal <- max(initial_home_price - downpayment_amount, 0.01)
         payment_periods <- term * 12
         amort <- amort.table(Loan = principal,
                              n = payment_periods,
@@ -660,7 +660,7 @@ server <- function(input, output, session) {
 
 read_tax_brackets <- function(){
     tax_brackets <- list()
-    tax_brackets$`Single Filer` <- read.csv('tax_brackets/single_filers.csv')
+    tax_brackets$`Single` <- read.csv('tax_brackets/single_filers.csv')
     tax_brackets$`Married Filing Jointly` <- read.csv('tax_brackets/married_filing_jointly.csv')
     tax_brackets$`Married Filing Separately` <- read.csv('tax_brackets/married_filing_separately.csv')
     tax_brackets$`Head of Household` <- read.csv('tax_brackets/head_of_household.csv')
