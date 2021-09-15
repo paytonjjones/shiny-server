@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>5 | Payton Jones</title>
+    <link>/publication-type/5/</link>
+      <atom:link href="/publication-type/5/index.xml" rel="self" type="application/rss+xml" />
+    <description>5</description>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Wed, 03 Mar 2021 00:00:00 +0000</lastBuildDate>
+    <image>
+      <url>/images/logo_hu55399b882dcd9d8fbe3ae8d74dceeb2f_9002_300x300_fit_lanczos_2.png</url>
+      <title>5</title>
+      <link>/publication-type/5/</link>
+    </image>
+    
+    <item>
+      <title>The Neurotic Treadmill: Decreasing Adversity, Increasing Vulnerability?</title>
+      <link>/publication/dissertation/</link>
+      <pubDate>Wed, 03 Mar 2021 00:00:00 +0000</pubDate>
+      <guid>/publication/dissertation/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>What&#39;s in a trauma: Using machine learning to unpack what makes an event traumatic</title>
+      <link>/publication/machine_learning_trauma/</link>
+      <pubDate>Fri, 01 Jan 2021 00:00:00 +0000</pubDate>
+      <guid>/publication/machine_learning_trauma/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Network trees: A method for recursively partitioning covariance structures</title>
+      <link>/publication/networktree/</link>
+      <pubDate>Wed, 01 Jan 2020 00:00:00 +0000</pubDate>
+      <guid>/publication/networktree/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Bridge centrality: A network approach to understanding comorbidity</title>
+      <link>/publication/bridge_centrality/</link>
+      <pubDate>Tue, 01 Jan 2019 00:00:00 +0000</pubDate>
+      <guid>/publication/bridge_centrality/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

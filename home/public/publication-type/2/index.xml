@@ -5,7 +5,7 @@
     <link>/publication-type/2/</link>
       <atom:link href="/publication-type/2/index.xml" rel="self" type="application/rss+xml" />
     <description>2</description>
-    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Wed, 03 Mar 2021 00:00:00 +0000</lastBuildDate>
+    <generator>Wowchemy (https://wowchemy.com)</generator><language>en-us</language><lastBuildDate>Fri, 01 Jan 2021 00:00:00 +0000</lastBuildDate>
     <image>
       <url>/images/logo_hu55399b882dcd9d8fbe3ae8d74dceeb2f_9002_300x300_fit_lanczos_2.png</url>
       <title>2</title>
@@ -13,26 +13,26 @@
     </image>
     
     <item>
-      <title>The Neurotic Treadmill: Decreasing Adversity, Increasing Vulnerability?</title>
-      <link>/publication/dissertation/</link>
-      <pubDate>Wed, 03 Mar 2021 00:00:00 +0000</pubDate>
-      <guid>/publication/dissertation/</guid>
+      <title>An answer to &#34;So what?&#34; Implications of network theory for research and practice</title>
+      <link>/publication/so_what/</link>
+      <pubDate>Fri, 01 Jan 2021 00:00:00 +0000</pubDate>
+      <guid>/publication/so_what/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Network trees: A method for recursively partitioning covariance structures</title>
-      <link>/publication/networktree/</link>
-      <pubDate>Wed, 01 Jan 2020 00:00:00 +0000</pubDate>
-      <guid>/publication/networktree/</guid>
+      <title>Does broadening one&#39;s concept of trauma undermine resilience</title>
+      <link>/publication/broadening_trauma_concept/</link>
+      <pubDate>Fri, 01 Jan 2021 00:00:00 +0000</pubDate>
+      <guid>/publication/broadening_trauma_concept/</guid>
       <description></description>
     </item>
     
     <item>
-      <title>Bridge centrality: A network approach to understanding comorbidity</title>
-      <link>/publication/bridge_centrality/</link>
-      <pubDate>Tue, 01 Jan 2019 00:00:00 +0000</pubDate>
-      <guid>/publication/bridge_centrality/</guid>
+      <title>Sampling variability is not nonreplication: A Bayesian reanalysis of Forbes, Wright, Markon, and Krueger</title>
+      <link>/publication/sampling_variability/</link>
+      <pubDate>Fri, 01 Jan 2021 00:00:00 +0000</pubDate>
+      <guid>/publication/sampling_variability/</guid>
       <description></description>
     </item>
     
@@ -41,6 +41,14 @@
       <link>/publication/viz_tutorial/</link>
       <pubDate>Sat, 01 Sep 2018 00:00:00 +0000</pubDate>
       <guid>/publication/viz_tutorial/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>Contemporary college student anxiety: The role of academic distress, financial stress, and support</title>
+      <link>/publication/contemporary_college_anxiety/</link>
+      <pubDate>Mon, 01 Jan 2018 00:00:00 +0000</pubDate>
+      <guid>/publication/contemporary_college_anxiety/</guid>
       <description></description>
     </item>
     

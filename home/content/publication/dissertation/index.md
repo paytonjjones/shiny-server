@@ -13,7 +13,7 @@ projects: []
 publication: 'Doctoral Dissertation'
 publication_short: ""
 publication_types:
-- "2"
+- "5"
 publishDate: "2021-03-03T00:00:00Z"
 summary: 
 title: 'The Neurotic Treadmill: Decreasing Adversity, Increasing Vulnerability?'

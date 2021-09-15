@@ -22,7 +22,7 @@ date_format: Jan 2006
 #   Leave `date_end` empty if it's your current employer.
 #   Begin multi-line descriptions with YAML's `|2-` multi-line prefix.
 experience:
-  - title: Data Scientist
+  - title: Senior Data Scientist
     company: Pluralsight
     company_url: ''
     location: Remote (Seattle, WA)
@@ -30,7 +30,7 @@ experience:
     date_end: ''
     description: |2-
     
-        * Work with production level deep learning systems scaled to more than 1 million users
+        * Work with production level deep learning systems scaled to more than 10 million users
         * Use network science to enhance machine learning algorithms for content recommendation
         * Develop scalable analytic solutions, synthesize results, and present to product leadership
         

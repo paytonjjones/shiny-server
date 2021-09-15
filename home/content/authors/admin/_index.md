@@ -16,7 +16,7 @@ email: ""
 highlight_name: false
 organizations:
 - name: Pluralsight
-role: Data Scientist
+role: Senior Data Scientist
 social:
 - icon: envelope
   icon_pack: fas
@@ -40,4 +40,4 @@ superuser: true
 title: Payton Jones
 ---
 
-Payton is a Data Scientist at Pluralsight. He graduated with a Ph.D. in Experimental Psychopathology from Harvard University. 
+Payton is a Senior Data Scientist at Pluralsight. He graduated with a Ph.D. in Experimental Psychopathology from Harvard University. 
